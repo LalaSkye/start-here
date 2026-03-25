@@ -1,0 +1,7 @@
+{
+  "actor": "agent_7",
+  "action": "delete",
+  "target": "/data/archive/2024",
+  "authority": "valid",
+  "policy": "forbidden"
+}

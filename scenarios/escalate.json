@@ -1,0 +1,7 @@
+{
+  "actor": "agent_3",
+  "action": "write",
+  "target": "/config/runtime.yaml",
+  "authority": "unknown",
+  "policy": "allowed"
+}

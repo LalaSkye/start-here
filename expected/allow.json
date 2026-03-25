@@ -1,0 +1,6 @@
+{
+  "decision": "ALLOW",
+  "executed": true,
+  "reason_code": "policy_allow",
+  "scenario": "allow"
+}

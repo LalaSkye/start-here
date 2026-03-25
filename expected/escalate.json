@@ -1,0 +1,6 @@
+{
+  "decision": "ESCALATE",
+  "executed": false,
+  "reason_code": "authority_ambiguous",
+  "scenario": "escalate"
+}

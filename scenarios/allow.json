@@ -1,0 +1,7 @@
+{
+  "actor": "user",
+  "action": "read",
+  "target": "/data/reports/q4.csv",
+  "authority": "valid",
+  "policy": "allowed"
+}

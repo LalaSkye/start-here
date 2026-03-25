@@ -1,0 +1,6 @@
+{
+  "decision": "DENY",
+  "executed": false,
+  "reason_code": "policy_violation",
+  "scenario": "deny"
+}

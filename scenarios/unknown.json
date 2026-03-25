@@ -1,0 +1,7 @@
+{
+  "actor": "agent_9",
+  "action": "escalate_privileges",
+  "target": "/system/auth",
+  "authority": "valid",
+  "policy": "allowed"
+}
