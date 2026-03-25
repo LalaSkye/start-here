@@ -1,9 +1,9 @@
 {
-  "name": "allow",
+  "name": "malformed",
   "actor": "user",
   "action": "read",
   "target": "file",
-  "authority": "valid",
+  "authority": "",
   "policy": "allowed",
-  "request_id": "REQ-ALLOW-001"
+  "request_id": "REQ-MAL-001"
 }

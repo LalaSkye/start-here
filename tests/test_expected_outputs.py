@@ -1,33 +1,32 @@
-"""Golden output tests. Scenarios must match expected files exactly."""
+"""Golden output tests. Scenarios run in alphabetical order through one engine instance."""
 
 import json
-import pathlib
-import pytest
+from pathlib import Path
 
-from src.engine import decide
-from src.output import format_result
-
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-SCENARIOS = ROOT / "scenarios"
-EXPECTED = ROOT / "expected"
+from src.engine import GovernanceEngine
+from src.output import format_output
 
 
-def scenario_names():
-    return sorted(p.stem for p in SCENARIOS.glob("*.json"))
+SCENARIO_DIR = Path(__file__).resolve().parent.parent / "scenarios"
+EXPECTED_DIR = Path(__file__).resolve().parent.parent / "expected"
 
 
-@pytest.mark.parametrize("name", scenario_names())
-def test_scenario_matches_expected(name):
-    with open(SCENARIOS / f"{name}.json") as f:
-        scenario = json.load(f)
-    with open(EXPECTED / f"{name}.json") as f:
-        expected = json.load(f)
+def load_json(path: Path) -> dict:
+    with path.open("r", encoding="utf-8") as f:
+        return json.load(f)
 
-    result = decide(scenario)
-    actual = format_result(name, result)
 
-    assert actual == expected, (
-        f"'{name}' mismatch.\n"
-        f"  got:      {json.dumps(actual, sort_keys=True)}\n"
-        f"  expected: {json.dumps(expected, sort_keys=True)}"
-    )
+def test_expected_outputs_match():
+    """Run all scenarios in order through one engine. Each must match its expected output."""
+    engine = GovernanceEngine()
+    ordered_names = sorted(p.stem for p in SCENARIO_DIR.glob("*.json"))
+
+    for name in ordered_names:
+        scenario = load_json(SCENARIO_DIR / f"{name}.json")
+        expected = load_json(EXPECTED_DIR / f"{name}.json")
+        actual = format_output(name, engine.decide(scenario))
+        assert actual == expected, (
+            f"Mismatch for scenario: {name}\n"
+            f"  got:      {json.dumps(actual, sort_keys=True)}\n"
+            f"  expected: {json.dumps(expected, sort_keys=True)}"
+        )

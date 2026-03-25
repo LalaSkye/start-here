@@ -1,7 +1,9 @@
 {
-  "actor": "agent_7",
+  "name": "deny",
+  "actor": "user",
   "action": "delete",
-  "target": "/data/archive/2024",
+  "target": "file",
   "authority": "valid",
-  "policy": "forbidden"
+  "policy": "forbidden",
+  "request_id": "REQ-DENY-001"
 }

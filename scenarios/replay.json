@@ -1,9 +1,9 @@
 {
-  "name": "unknown",
+  "name": "replay",
   "actor": "user",
-  "action": "format_disk",
+  "action": "read",
   "target": "file",
   "authority": "valid",
   "policy": "allowed",
-  "request_id": "REQ-UNK-001"
+  "request_id": "REQ-ALLOW-001"
 }

@@ -1,0 +1,7 @@
+REASON_POLICY_ALLOW = "policy_allow_with_valid_authority"
+REASON_POLICY_VIOLATION = "policy_violation"
+REASON_AUTHORITY_AMBIGUOUS = "authority_ambiguous"
+REASON_UNKNOWN_ACTION = "unknown_action"
+REASON_MALFORMED_INPUT = "malformed_input"
+REASON_REPLAY_DETECTED = "replay_detected"
+REASON_DEFAULT_DENY = "default_deny"

@@ -1,7 +1,9 @@
 {
-  "actor": "agent_3",
+  "name": "escalate",
+  "actor": "user",
   "action": "write",
-  "target": "/config/runtime.yaml",
+  "target": "file",
   "authority": "unknown",
-  "policy": "allowed"
+  "policy": "allowed",
+  "request_id": "REQ-ESC-001"
 }

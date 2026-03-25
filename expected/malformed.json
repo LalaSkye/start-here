@@ -1,0 +1,6 @@
+{
+  "decision": "DENY",
+  "executed": false,
+  "reason_code": "malformed_input",
+  "scenario": "malformed"
+}

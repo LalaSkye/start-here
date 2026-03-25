@@ -1,53 +1,98 @@
-"""Decision engine. One function. Deterministic.
+from src.event_log import EventLog
+from src.reason_codes import (
+    REASON_AUTHORITY_AMBIGUOUS,
+    REASON_DEFAULT_DENY,
+    REASON_MALFORMED_INPUT,
+    REASON_POLICY_ALLOW,
+    REASON_POLICY_VIOLATION,
+    REASON_REPLAY_DETECTED,
+    REASON_UNKNOWN_ACTION,
+)
+from src.validation import validate_scenario
 
-Evaluation order (first decisive check wins):
-
-  1. Action prohibited?        -> DENY
-  2. Action unknown?           -> DENY  (closed-world)
-  3. Policy forbidden?         -> DENY
-  4. Authority missing?        -> DENY
-  5. Authority ambiguous?      -> ESCALATE
-  6. All checks pass           -> ALLOW
-"""
 
 KNOWN_ACTIONS = {"read", "write", "delete"}
-PROHIBITED_ACTIONS = {"drop_table", "deploy_production"}
 
 
-def decide(scenario):
-    """Evaluate a scenario dict. Returns a result dict. Never raises."""
+class GovernanceEngine:
+    def __init__(self) -> None:
+        self.event_log = EventLog()
 
-    action = scenario.get("action", "")
-    authority = scenario.get("authority", "")
-    policy = scenario.get("policy", "")
+    def decide(self, scenario: dict) -> dict:
+        valid, _error = validate_scenario(scenario)
+        request_id = scenario.get("request_id", "UNKNOWN")
+        scenario_name = scenario.get("name", "unnamed")
 
-    # 1. Prohibited action
-    if action in PROHIBITED_ACTIONS:
-        return _result("DENY", "action_prohibited")
+        if not valid:
+            result = {
+                "decision": "DENY",
+                "reason_code": REASON_MALFORMED_INPUT,
+                "executed": False,
+            }
+            self.event_log.append(request_id, scenario_name, **result)
+            return result
 
-    # 2. Unknown action (closed-world)
-    if action not in KNOWN_ACTIONS:
-        return _result("DENY", "action_unknown")
+        action = scenario["action"]
+        authority = scenario["authority"]
+        policy = scenario["policy"]
 
-    # 3. Policy violation
-    if policy == "forbidden":
-        return _result("DENY", "policy_violation")
+        if self.event_log.has_seen(request_id):
+            result = {
+                "decision": "DENY",
+                "reason_code": REASON_REPLAY_DETECTED,
+                "executed": False,
+            }
+            self.event_log.append(request_id, scenario_name, **result)
+            return result
 
-    # 4. Authority missing
-    if not authority:
-        return _result("DENY", "authority_missing")
+        if action not in KNOWN_ACTIONS:
+            result = {
+                "decision": "DENY",
+                "reason_code": REASON_UNKNOWN_ACTION,
+                "executed": False,
+            }
+            self.event_log.mark_seen(request_id)
+            self.event_log.append(request_id, scenario_name, **result)
+            return result
 
-    # 5. Authority ambiguous
-    if authority == "unknown":
-        return _result("ESCALATE", "authority_ambiguous")
+        if policy == "forbidden":
+            result = {
+                "decision": "DENY",
+                "reason_code": REASON_POLICY_VIOLATION,
+                "executed": False,
+            }
+            self.event_log.mark_seen(request_id)
+            self.event_log.append(request_id, scenario_name, **result)
+            return result
 
-    # 6. All checks pass
-    return _result("ALLOW", "policy_allow")
+        if authority == "unknown":
+            result = {
+                "decision": "ESCALATE",
+                "reason_code": REASON_AUTHORITY_AMBIGUOUS,
+                "executed": False,
+            }
+            self.event_log.mark_seen(request_id)
+            self.event_log.append(request_id, scenario_name, **result)
+            return result
 
+        if authority == "valid" and policy == "allowed":
+            result = {
+                "decision": "ALLOW",
+                "reason_code": REASON_POLICY_ALLOW,
+                "executed": True,
+            }
+            self.event_log.mark_seen(request_id)
+            self.event_log.append(request_id, scenario_name, **result)
+            return result
 
-def _result(decision, reason_code):
-    return {
-        "decision": decision,
-        "reason_code": reason_code,
-        "executed": decision == "ALLOW",
-    }
+        result = {
+            "decision": "DENY",
+            "reason_code": REASON_DEFAULT_DENY,
+            "executed": False,
+        }
+        self.event_log.mark_seen(request_id)
+        self.event_log.append(request_id, scenario_name, **result)
+        return result
+
+    def export_event_log(self) -> dict:
+        return self.event_log.export()

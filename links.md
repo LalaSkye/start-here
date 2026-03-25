@@ -2,7 +2,7 @@
 
 | Repo | What it does |
 |------|-------------|
-| [execution-boundary-lab](https://github.com/LalaSkye/execution-boundary-lab) | Broader execution-boundary experiments with contamination cases |
-| [stop-machine](https://github.com/LalaSkye/stop-machine) | Machine-level stopping and refusal semantics |
+| [constraint-workshop](https://github.com/LalaSkye/constraint-workshop) | Small constrained examples of governed behaviour |
+| [stop-machine](https://github.com/LalaSkye/stop-machine) | Stopping, refusal, and boundary semantics |
 | [policy-lint](https://github.com/LalaSkye/policy-lint) | Policy validation and lint-style control surfaces |
-| [constraint-workshop](https://github.com/LalaSkye/constraint-workshop) | Constrained examples and policy behaviour surfaces |
+| [execution-boundary-lab](https://github.com/LalaSkye/execution-boundary-lab) | Broader execution-boundary experiments |
