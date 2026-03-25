@@ -1,0 +1,13 @@
+{
+  "name": "paradox_inheritance",
+  "actor": "agent_x",
+  "action": "write",
+  "target": "/data/records",
+  "authority": "inherited",
+  "policy": "allowed",
+  "request_id": "REQ-PX-INH-001",
+  "flags": {
+    "inherited_authority": true,
+    "fresh_authority_required": true
+  }
+}

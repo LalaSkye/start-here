@@ -22,28 +22,27 @@ python run_demo.py --scenario deny
 
 ## What You Will See
 
-Six scenarios producing three distinct runtime decisions:
+Twelve scenarios producing three distinct runtime decisions:
 
 ```
 ========================================================
   EXECUTION BOUNDARY — Decision Demo (steel)
 ========================================================
 
-  [+] allow        -> ALLOW       (policy_allow_with_valid_authority)
-  [x] deny         -> DENY        (policy_violation)
-  [?] escalate     -> ESCALATE    (authority_ambiguous)
-  [x] malformed    -> DENY        (malformed_input)
-  [x] replay       -> DENY        (replay_detected)
-  [x] unknown      -> DENY        (unknown_action)
+  [+] allow              -> ALLOW       (policy_allow_with_valid_authority)
+  [x] deny               -> DENY        (policy_violation)
+  [?] escalate           -> ESCALATE    (authority_ambiguous)
+  [x] malformed          -> DENY        (malformed_input)
+  [x] paradox_authority  -> DENY        (authority_contradiction)
+  [x] paradox_exec       -> DENY        (execution_contradiction)
+  [x] paradox_inheritance-> DENY        (authority_contradiction)
+  [x] paradox_state      -> DENY        (state_contradiction)
+  [x] paradox_structural -> DENY        (structural_contradiction)
+  [x] paradox_temporal   -> DENY        (temporal_contradiction)
+  [x] replay             -> DENY        (replay_detected)
+  [x] unknown            -> DENY        (unknown_action)
 
---------------------------------------------------------
-  ALL 6 SCENARIOS PASSED
---------------------------------------------------------
-
-  EVENT LOG (6 entries, hash-chained)
-    REQ-ALLOW-001        ALLOW      hash:a1b2c3d4e5f6...
-    REQ-DENY-001         DENY       hash:...
-    ...
+  ALL 12 SCENARIOS PASSED
 ```
 
 ## What This Proves
@@ -54,15 +53,28 @@ Six scenarios producing three distinct runtime decisions:
 - Ambiguous inputs do not silently pass
 - Malformed inputs fail cleanly
 - Replay attempts are detected and blocked
+- Contradiction paths collapse before reaching the gate
 - Every decision is hash-chained for tamper evidence
+
+## Two Layers
+
+**Paradox Vector** (pre-gate): detects inputs that contain mutually incompatible conditions — authority claimed but absent, execution smuggled inside non-exec scope, stale approvals used as current. Contradiction paths collapse into a sealed sink. No execution. No adaptation.
+
+**Admissibility Gate** (main gate): evaluates coherent requests against policy, authority, and action rules. Returns ALLOW, DENY, or ESCALATE.
+
+```
+input → PARADOX CHECK → if contradiction → SINK (blocked)
+                      → if clean → ADMISSIBILITY GATE → ALLOW / DENY / ESCALATE
+```
 
 ## Files Worth Reading
 
 | File | What it does |
 |------|-------------|
 | `run_demo.py` | Entry point |
-| `src/engine.py` | Decision logic |
-| `src/validation.py` | Input checks |
+| `src/paradox.py` | Contradiction detection + sealed sink |
+| `src/engine.py` | Decision logic (paradox → validation → policy) |
+| `src/validation.py` | Input structure checks |
 | `src/event_log.py` | Replay guard + hash-chained log |
 | `expected/` | Canonical outputs |
 
@@ -71,6 +83,8 @@ Six scenarios producing three distinct runtime decisions:
 ```
 python -m pytest tests/ -v
 ```
+
+28 tests. All passing.
 
 ## Where Next
 

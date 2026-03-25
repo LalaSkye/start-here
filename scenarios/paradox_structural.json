@@ -1,0 +1,12 @@
+{
+  "name": "paradox_structural",
+  "actor": "agent_x",
+  "action": "delete",
+  "target": "/data/archive",
+  "authority": "valid",
+  "policy": "allowed",
+  "request_id": "REQ-PX-STRUCT-001",
+  "flags": {
+    "missing_critical_fields": true
+  }
+}

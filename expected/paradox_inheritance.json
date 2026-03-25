@@ -1,0 +1,6 @@
+{
+  "decision": "DENY",
+  "executed": false,
+  "reason_code": "authority_contradiction",
+  "scenario": "paradox_inheritance"
+}

@@ -1,0 +1,12 @@
+{
+  "name": "paradox_state",
+  "actor": "agent_x",
+  "action": "write",
+  "target": "/data/ledger",
+  "authority": "valid",
+  "policy": "allowed",
+  "request_id": "REQ-PX-STATE-001",
+  "flags": {
+    "references_nonexistent_state": true
+  }
+}

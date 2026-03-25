@@ -1,0 +1,12 @@
+{
+  "name": "paradox_temporal",
+  "actor": "agent_x",
+  "action": "write",
+  "target": "/config/runtime",
+  "authority": "valid",
+  "policy": "allowed",
+  "request_id": "REQ-PX-TEMP-001",
+  "flags": {
+    "stale_approval": true
+  }
+}

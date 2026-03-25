@@ -1,0 +1,6 @@
+{
+  "decision": "DENY",
+  "executed": false,
+  "reason_code": "temporal_contradiction",
+  "scenario": "paradox_temporal"
+}

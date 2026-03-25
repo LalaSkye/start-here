@@ -1,0 +1,12 @@
+{
+  "name": "paradox_authority",
+  "actor": "agent_x",
+  "action": "commit",
+  "target": "/system/config",
+  "authority": "",
+  "policy": "allowed",
+  "request_id": "REQ-PX-AUTH-001",
+  "flags": {
+    "claims_approval": true
+  }
+}

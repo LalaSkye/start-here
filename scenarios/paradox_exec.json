@@ -1,0 +1,13 @@
+{
+  "name": "paradox_exec",
+  "actor": "agent_x",
+  "action": "deploy",
+  "target": "/services/api",
+  "authority": "valid",
+  "policy": "allowed",
+  "request_id": "REQ-PX-EXEC-001",
+  "flags": {
+    "marked_non_exec": true,
+    "requests_execution": true
+  }
+}

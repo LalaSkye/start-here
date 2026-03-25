@@ -1,0 +1,6 @@
+{
+  "decision": "DENY",
+  "executed": false,
+  "reason_code": "structural_contradiction",
+  "scenario": "paradox_structural"
+}

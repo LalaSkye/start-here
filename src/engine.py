@@ -1,4 +1,5 @@
 from src.event_log import EventLog
+from src.paradox import check_contradictions, sink
 from src.reason_codes import (
     REASON_AUTHORITY_AMBIGUOUS,
     REASON_DEFAULT_DENY,
@@ -19,9 +20,18 @@ class GovernanceEngine:
         self.event_log = EventLog()
 
     def decide(self, scenario: dict) -> dict:
-        valid, _error = validate_scenario(scenario)
         request_id = scenario.get("request_id", "UNKNOWN")
         scenario_name = scenario.get("name", "unnamed")
+
+        # --- Phase 0: Paradox Vector (pre-gate contradiction sink) ---
+        is_contradiction, contradiction_code = check_contradictions(scenario)
+        if is_contradiction:
+            result = sink(scenario_name, contradiction_code)
+            self.event_log.append(request_id, scenario_name, **result)
+            return result
+
+        # --- Phase 1: Structural validation ---
+        valid, _error = validate_scenario(scenario)
 
         if not valid:
             result = {
