@@ -1,0 +1,15 @@
+# Protected surfaces — governance lint will enforce binding checks
+# on any file matching these glob patterns.
+docs/governance/**
+docs/runtime/**
+docs/approval/**
+docs/deployment/**
+docs/safety/**
+specs/governance/**
+specs/runtime/**
+specs/control/**
+specs/approval/**
+architecture/**/governance*
+architecture/**/runtime*
+policies/**
+contracts/**

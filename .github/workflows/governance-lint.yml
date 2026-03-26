@@ -1,0 +1,94 @@
+name: Governance Lint
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    paths:
+      - '**/*.md'
+      - '**/*.txt'
+      - '**/*.rst'
+      - '**/*.yaml'
+      - '**/*.yml'
+      - '**/*.json'
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  governance-lint:
+    runs-on: ubuntu-latest
+    env:
+      GOVERNANCE_LINT_MODE: MODE_A
+      PROTECTED_PATHS_FILE: .github/governance/protected_paths.txt
+      LABEL_MAP_FILE: .github/governance/label_map.json
+      RESULTS_JSON: /tmp/governance_lint_results.json
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Get changed files
+        id: changed
+        uses: tj-actions/changed-files@v44
+        with:
+          files: |
+            **/*.md
+            **/*.txt
+            **/*.rst
+            **/*.yaml
+            **/*.yml
+            **/*.json
+
+      - name: Run governance lint
+        if: steps.changed.outputs.any_changed == 'true'
+        run: |
+          python .github/scripts/governance_lint.py \
+            --files "${{ steps.changed.outputs.all_changed_files }}" \
+            --protected-paths "${PROTECTED_PATHS_FILE}" \
+            --mode "${GOVERNANCE_LINT_MODE}" \
+            --output "${RESULTS_JSON}"
+
+      - name: Enforce fail rule
+        if: steps.changed.outputs.any_changed == 'true'
+        run: |
+          python -c "
+          import json, os, sys
+
+          path = os.environ['RESULTS_JSON']
+          if not os.path.exists(path):
+              print('No results file found. Skipping enforcement.')
+              sys.exit(0)
+
+          with open(path, 'r') as f:
+              data = json.load(f)
+
+          mode = os.environ['GOVERNANCE_LINT_MODE']
+          should_fail = False
+
+          for item in data.get('results', []):
+              protected = item.get('is_protected_surface', False)
+              ambiguous = item.get('verdict') == 'AMBIGUOUS'
+              mechanism_missing = item.get('mechanism_missing', False)
+              enforcement_missing = item.get('enforcement_missing', False)
+              waived = item.get('waived', False)
+
+              if waived:
+                  continue
+              if mode == 'MODE_C' and ambiguous:
+                  should_fail = True
+              if mode == 'MODE_B' and protected and ambiguous and (mechanism_missing or enforcement_missing):
+                  should_fail = True
+
+          if should_fail:
+              print('BUILD FAILED: governance-binding-gap')
+              sys.exit(1)
+
+          print('Governance lint passed.')
+          "

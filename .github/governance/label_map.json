@@ -1,0 +1,15 @@
+{
+  "primary": "governance-binding-gap",
+  "secondary": {
+    "interface": "missing-interface",
+    "mechanism": "missing-mechanism",
+    "constraint": "missing-constraint",
+    "enforcement": "missing-enforcement"
+  },
+  "informational": {
+    "protected": "protected-surface",
+    "governance_doc": "governance-doc",
+    "runtime_control": "runtime-control-surface",
+    "waived": "governance-lint-waived"
+  }
+}
