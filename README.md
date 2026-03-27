@@ -56,26 +56,46 @@ Twelve scenarios producing three distinct runtime decisions:
 - Contradiction paths collapse before reaching the gate
 - Every decision is hash-chained for tamper evidence
 
-## Two Layers
+## Canonical Invariant
 
-**Paradox Vector** (pre-gate): detects inputs that contain mutually incompatible conditions — authority claimed but absent, execution smuggled inside non-exec scope, stale approvals used as current. Contradiction paths collapse into a sealed sink. No execution. No adaptation.
+> **No valid Decision Record → no state mutation.**
 
-**Admissibility Gate** (main gate): evaluates coherent requests against policy, authority, and action rules. Returns ALLOW, DENY, or ESCALATE.
+## Architecture
+
+**Layer 1 — Action Registry** (`core/action_registry.py`): Defines which action classes exist and what each class requires. Governed artefact with six mandatory fields per action. Bound at parse-time. Unknown actions → DENY.
+
+**Layer 2 — Commit Gate** (`core/commit_gate.py`): The Decision Record is not an audit artefact — it is the transition licence. The commit gate converts the record from evaluation output into a required input for state mutation. Pure function. Fail-closed. Nine checks including authority scope, state verification, and boundary validation.
+
+**Layer 3 — Paradox Vector** (`core/paradox.py`): Detects inputs that contain mutually incompatible conditions — authority claimed but absent, execution smuggled inside non-exec scope, stale approvals used as current. Contradiction paths collapse into a sealed sink.
+
+**Layer 4 — Stress Harness** (`tests/test_core/test_invariants.py`): 10 bulkhead invariants. If any fail, the implementation is broken.
 
 ```
-input → PARADOX CHECK → if contradiction → SINK (blocked)
-                      → if clean → ADMISSIBILITY GATE → ALLOW / DENY / ESCALATE
+input → PARSE → CANONICALISE → VALIDATE → EVALUATE → DECISION RECORD
+                                                          ↓
+                                              COMMIT GATE (Layer 2)
+                                                          ↓
+                                              state_oracle verifies state
+                                              boundary_context validates where
+                                              authority_scope validates who
+                                                          ↓
+                                              CommittedRecord binds decision → state
 ```
 
 ## Files Worth Reading
 
 | File | What it does |
 |------|-------------|
+| `core/action_registry.py` | Layer 1 — governed action surface |
+| `core/commit_gate.py` | Layer 2 — execution-binding commit boundary |
+| `core/decision_record.py` | Immutable decision record with decision_id |
+| `core/evaluator.py` | 8-stage evaluation pipeline |
+| `core/state_oracle.py` | State verification at commit boundary |
+| `core/boundary_context.py` | Environment + boundary class validation |
+| `core/paradox.py` | Contradiction detection + sealed sink |
+| `core/proof.py` | Proof-carrying packet obligations |
+| `core/algebra.py` | Admissibility algebra + action primitives |
 | `run_demo.py` | Entry point |
-| `src/paradox.py` | Contradiction detection + sealed sink |
-| `src/engine.py` | Decision logic (paradox → validation → policy) |
-| `src/validation.py` | Input structure checks |
-| `src/event_log.py` | Replay guard + hash-chained log |
 | `expected/` | Canonical outputs |
 
 ## Run Tests
@@ -84,7 +104,19 @@ input → PARADOX CHECK → if contradiction → SINK (blocked)
 python -m pytest tests/ -v
 ```
 
-28 tests. All passing.
+134 tests. All passing.
+
+## Canonical Failure Set (all enforced)
+
+1. No decision record
+2. Malformed decision record
+3. Missing mandatory fields
+4. Evidence / hash mismatch
+5. Commit boundary mismatch
+6. State hash mismatch
+7. Authority stale or scope-invalid
+
+Any of the above → invalid decision record → no commit.
 
 ## Where Next
 
