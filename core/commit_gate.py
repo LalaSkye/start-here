@@ -1,4 +1,4 @@
-"""COMMIT_GATE_v1.1 — Execution-binding commit boundary (pure).
+"""COMMIT_GATE_v1.2 — Execution-binding commit boundary (pure).
 
 The commit gate is the Layer 2 mechanism that converts the Decision Record
 from an *output* of evaluation into a *required input* for state mutation.
@@ -14,9 +14,13 @@ Design constraints:
     - State binding lives on CommittedRecord, a separate immutable object
       returned only on success.
 
-v1.0 — Initial commit gate (Gaps 1-2).
-v1.1 — Gap 5: state oracle wired in (state_before_hash verified against
+v1.0 — Initial commit gate.
+v1.1 — Fixed purity/immutability contradiction.
+v1.2 — Gap 5: state oracle wired in (state_before_hash verified against
         actual state).
+        Gap 4: boundary context wired in (environment + boundary class
+        validated).
+        Both are optional — backward compatible with v1.1 callers.
 """
 
 from __future__ import annotations
@@ -29,6 +33,7 @@ from core.canonical import Packet
 from core.decision_record import DecisionRecord
 from core.version import SCHEMA_VERSION
 from core.state_oracle import StateOracle
+from core.boundary_context import BoundaryContext, validate_boundary
 
 
 # ---------------------------------------------------------------------------
@@ -106,7 +111,7 @@ class DenialCode:
     AUTHORITY_STALE      = "authority_stale"
     STATE_HASH_MISMATCH  = "state_hash_mismatch"
     STATE_UNKNOWN        = "state_unknown"
-    BOUNDARY_MISMATCH    = "commit_boundary_mismatch"     # reserved
+    BOUNDARY_MISMATCH    = "commit_boundary_mismatch"
 
 
 # ---------------------------------------------------------------------------
@@ -120,8 +125,28 @@ def commit_gate(
     state_after_hash: str,
     *,
     state_oracle: Optional[StateOracle] = None,
+    boundary: Optional[BoundaryContext] = None,
 ) -> CommitResult:
-    """The commit boundary.  Pure function.  No mutation.  No side effects."""
+    """The commit boundary.  Pure function.  No mutation.  No side effects.
+
+    Args:
+        record:            The DecisionRecord that must authorise this commit.
+        packet:            The original Packet that was evaluated.
+        state_before_hash: Hash of state before the proposed mutation.
+        state_after_hash:  Hash of state after the proposed mutation.
+        state_oracle:      Optional. If provided, state_before_hash is verified
+                           against the oracle's view of current state.
+                           If not provided, state verification is skipped
+                           (backward compatible).
+        boundary:          Optional. If provided, the commit boundary
+                           (environment + boundary class) is validated.
+                           If not provided, boundary validation is skipped
+                           (backward compatible).
+
+    Returns:
+        CommitResult with permitted=True and a CommittedRecord,
+        or CommitResult with permitted=False and a denial reason.
+    """
 
     # --- Failure 1: No decision record ---
     if record is None:
@@ -208,6 +233,16 @@ def commit_gate(
                     f"actual={actual_state}."
                 ),
                 denial_code=DenialCode.STATE_HASH_MISMATCH,
+            )
+
+    # --- Failure 5 (Gap 4): Boundary context validation ---
+    if boundary is not None:
+        boundary_result = validate_boundary(boundary)
+        if not boundary_result.valid:
+            return CommitResult(
+                permitted=False,
+                denial_reason=boundary_result.denial_reason,
+                denial_code=DenialCode.BOUNDARY_MISMATCH,
             )
 
     # --- Failure 7 (Gap 1): Authority scope validation ---

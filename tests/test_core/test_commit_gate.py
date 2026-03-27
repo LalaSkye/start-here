@@ -25,6 +25,7 @@ from core.commit_gate import (
 )
 from core.algebra import Verdict
 from core.state_oracle import InMemoryStateOracle, NullStateOracle
+from core.boundary_context import BoundaryContext, Environment, BoundaryClass
 from core.version import SCHEMA_VERSION
 
 
@@ -583,6 +584,157 @@ def test_CG26_state_mismatch_overrides_all():
     result = commit_gate(
         record, packet, STATE_BEFORE, STATE_AFTER,
         state_oracle=oracle,
+    )
+    assert result.permitted is False
+    assert result.denial_code == DenialCode.STATE_HASH_MISMATCH
+
+# =========================================================================
+# GAP 4: Boundary Context Tests (CG27–CG33)
+# =========================================================================
+
+# CG27: Valid boundary → commit permitted
+
+def test_CG27_valid_boundary_permits():
+    """A valid environment + boundary class permits the commit."""
+    raw = _valid_mutating_packet(packet_id="PKT-CG27")
+    record, packet = _evaluate_and_get(raw)
+
+    boundary = BoundaryContext(
+        environment=Environment.PRODUCTION,
+        boundary_class=BoundaryClass.DEPLOY,
+    )
+    result = commit_gate(
+        record, packet, STATE_BEFORE, STATE_AFTER,
+        boundary=boundary,
+    )
+    assert result.permitted is True
+
+
+# CG28: Wrong boundary class for environment → denied
+
+def test_CG28_wrong_boundary_class_denies():
+    """pre_merge is not allowed in production."""
+    raw = _valid_mutating_packet(packet_id="PKT-CG28")
+    record, packet = _evaluate_and_get(raw)
+
+    boundary = BoundaryContext(
+        environment=Environment.PRODUCTION,
+        boundary_class=BoundaryClass.PRE_MERGE,
+    )
+    result = commit_gate(
+        record, packet, STATE_BEFORE, STATE_AFTER,
+        boundary=boundary,
+    )
+    assert result.permitted is False
+    assert result.denial_code == DenialCode.BOUNDARY_MISMATCH
+
+
+# CG29: Unknown environment → denied
+
+def test_CG29_unknown_environment_denies():
+    """An unknown environment must be denied (fail-closed)."""
+    raw = _valid_mutating_packet(packet_id="PKT-CG29")
+    record, packet = _evaluate_and_get(raw)
+
+    boundary = BoundaryContext(
+        environment="shadow_realm",
+        boundary_class=BoundaryClass.DEPLOY,
+    )
+    result = commit_gate(
+        record, packet, STATE_BEFORE, STATE_AFTER,
+        boundary=boundary,
+    )
+    assert result.permitted is False
+    assert result.denial_code == DenialCode.BOUNDARY_MISMATCH
+
+
+# CG30: Unknown boundary class → denied
+
+def test_CG30_unknown_boundary_class_denies():
+    """An unknown boundary class must be denied (fail-closed)."""
+    raw = _valid_mutating_packet(packet_id="PKT-CG30")
+    record, packet = _evaluate_and_get(raw)
+
+    boundary = BoundaryContext(
+        environment=Environment.PRODUCTION,
+        boundary_class="yolo_ship",
+    )
+    result = commit_gate(
+        record, packet, STATE_BEFORE, STATE_AFTER,
+        boundary=boundary,
+    )
+    assert result.permitted is False
+    assert result.denial_code == DenialCode.BOUNDARY_MISMATCH
+
+
+# CG31: No boundary provided → skipped (backward compatible)
+
+def test_CG31_no_boundary_skips_check():
+    """Without a boundary context, validation is skipped."""
+    raw = _valid_mutating_packet(packet_id="PKT-CG31")
+    record, packet = _evaluate_and_get(raw)
+
+    result = commit_gate(record, packet, STATE_BEFORE, STATE_AFTER)
+    assert result.permitted is True
+
+
+# CG32: Dev cannot deploy
+
+def test_CG32_dev_cannot_deploy():
+    """Deploy boundary class is not allowed in dev environment."""
+    raw = _valid_mutating_packet(packet_id="PKT-CG32")
+    record, packet = _evaluate_and_get(raw)
+
+    boundary = BoundaryContext(
+        environment=Environment.DEV,
+        boundary_class=BoundaryClass.DEPLOY,
+    )
+    result = commit_gate(
+        record, packet, STATE_BEFORE, STATE_AFTER,
+        boundary=boundary,
+    )
+    assert result.permitted is False
+    assert result.denial_code == DenialCode.BOUNDARY_MISMATCH
+
+
+# CG33: Both oracle and boundary together
+
+def test_CG33_oracle_and_boundary_together():
+    """Full stack: oracle + boundary + all other checks."""
+    raw = _valid_mutating_packet(packet_id="PKT-CG33")
+    record, packet = _evaluate_and_get(raw)
+
+    oracle = InMemoryStateOracle({"/data/file": STATE_BEFORE})
+    boundary = BoundaryContext(
+        environment=Environment.STAGING,
+        boundary_class=BoundaryClass.DEPLOY,
+    )
+    result = commit_gate(
+        record, packet, STATE_BEFORE, STATE_AFTER,
+        state_oracle=oracle,
+        boundary=boundary,
+    )
+    assert result.permitted is True
+    assert result.committed.state_before_hash == STATE_BEFORE
+    assert result.committed.state_after_hash == STATE_AFTER
+
+
+# CG34: Oracle mismatch takes priority over boundary check
+
+def test_CG34_oracle_mismatch_before_boundary():
+    """State mismatch is checked before boundary context."""
+    raw = _valid_mutating_packet(packet_id="PKT-CG34")
+    record, packet = _evaluate_and_get(raw)
+
+    oracle = InMemoryStateOracle({"/data/file": "wrong_state"})
+    boundary = BoundaryContext(
+        environment=Environment.PRODUCTION,
+        boundary_class=BoundaryClass.DEPLOY,
+    )
+    result = commit_gate(
+        record, packet, STATE_BEFORE, STATE_AFTER,
+        state_oracle=oracle,
+        boundary=boundary,
     )
     assert result.permitted is False
     assert result.denial_code == DenialCode.STATE_HASH_MISMATCH
