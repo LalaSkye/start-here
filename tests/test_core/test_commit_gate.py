@@ -24,6 +24,7 @@ from core.commit_gate import (
     authority_sufficient, AUTHORITY_SCOPE,
 )
 from core.algebra import Verdict
+from core.state_oracle import InMemoryStateOracle, NullStateOracle
 from core.version import SCHEMA_VERSION
 
 
@@ -480,3 +481,108 @@ def test_CG19_gate_does_not_mutate_record():
 
     # Record must be identical after the gate call
     after = record.to_dict()
+
+# =========================================================================
+# GAP 5: State Oracle Tests (CG20–CG26)
+# =========================================================================
+
+# CG20: State oracle confirms match → commit permitted
+
+def test_CG20_state_oracle_match_permits():
+    """When the oracle confirms state_before_hash matches, commit proceeds."""
+    raw = _valid_mutating_packet(packet_id="PKT-CG20")
+    record, packet = _evaluate_and_get(raw)
+
+    oracle = InMemoryStateOracle({"/data/file": STATE_BEFORE})
+    result = commit_gate(
+        record, packet, STATE_BEFORE, STATE_AFTER,
+        state_oracle=oracle,
+    )
+    assert result.permitted is True
+    assert result.state_after_hash == STATE_AFTER
+
+
+# CG21: State oracle says mismatch → commit denied
+
+def test_CG21_state_oracle_mismatch_denies():
+    """When the oracle's actual state differs from claimed, commit is denied."""
+    raw = _valid_mutating_packet(packet_id="PKT-CG21")
+    record, packet = _evaluate_and_get(raw)
+
+    oracle = InMemoryStateOracle({"/data/file": "actual_state_xyz"})
+    result = commit_gate(
+        record, packet, STATE_BEFORE, STATE_AFTER,
+        state_oracle=oracle,
+    )
+    assert result.permitted is False
+    assert result.denial_code == DenialCode.STATE_HASH_MISMATCH
+
+
+# CG22: State oracle returns None (unknown state) → commit denied
+
+def test_CG22_state_oracle_unknown_denies():
+    """When the oracle cannot determine state, fail-closed."""
+    raw = _valid_mutating_packet(packet_id="PKT-CG22")
+    record, packet = _evaluate_and_get(raw)
+
+    oracle = InMemoryStateOracle({})  # no state for /data/file
+    result = commit_gate(
+        record, packet, STATE_BEFORE, STATE_AFTER,
+        state_oracle=oracle,
+    )
+    assert result.permitted is False
+    assert result.denial_code == DenialCode.STATE_UNKNOWN
+
+
+# CG23: No oracle provided → state check skipped (backward compatible)
+
+def test_CG23_no_oracle_skips_state_check():
+    """Without an oracle, state verification is skipped (v1.1 behavior)."""
+    raw = _valid_mutating_packet(packet_id="PKT-CG23")
+    record, packet = _evaluate_and_get(raw)
+
+    result = commit_gate(record, packet, STATE_BEFORE, STATE_AFTER)
+    assert result.permitted is True  # no oracle → no state check
+
+
+# CG24: NullStateOracle behaves like no oracle
+
+def test_CG24_null_oracle_skips_state_check():
+    """NullStateOracle always returns None but the gate treats no-oracle
+    as skip, not as unknown.  NullStateOracle is not passed to the gate;
+    it's a default for systems that don't have a state oracle yet."""
+    oracle = NullStateOracle()
+    assert oracle.current_state_hash("/data/file") is None
+
+
+# CG25: Oracle is not mutated by the gate
+
+def test_CG25_oracle_not_mutated():
+    """The gate must not modify the oracle's state."""
+    raw = _valid_mutating_packet(packet_id="PKT-CG25")
+    record, packet = _evaluate_and_get(raw)
+
+    oracle = InMemoryStateOracle({"/data/file": STATE_BEFORE})
+    commit_gate(
+        record, packet, STATE_BEFORE, STATE_AFTER,
+        state_oracle=oracle,
+    )
+    # Oracle state unchanged
+    assert oracle.current_state_hash("/data/file") == STATE_BEFORE
+
+
+# CG26: State oracle + wrong state_before + all other checks pass → denied
+
+def test_CG26_state_mismatch_overrides_all():
+    """State mismatch denies even when everything else is valid."""
+    raw = _valid_mutating_packet(packet_id="PKT-CG26")
+    record, packet = _evaluate_and_get(raw)
+    assert record.verdict == Verdict.ALLOW.value
+
+    oracle = InMemoryStateOracle({"/data/file": "completely_different"})
+    result = commit_gate(
+        record, packet, STATE_BEFORE, STATE_AFTER,
+        state_oracle=oracle,
+    )
+    assert result.permitted is False
+    assert result.denial_code == DenialCode.STATE_HASH_MISMATCH

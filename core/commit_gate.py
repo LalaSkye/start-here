@@ -1,4 +1,4 @@
-"""COMMIT_GATE_v1 — Execution-binding commit boundary (pure).
+"""COMMIT_GATE_v1.1 — Execution-binding commit boundary (pure).
 
 The commit gate is the Layer 2 mechanism that converts the Decision Record
 from an *output* of evaluation into a *required input* for state mutation.
@@ -13,6 +13,10 @@ Design constraints:
     - DecisionRecord is frozen (immutable). The gate never touches it.
     - State binding lives on CommittedRecord, a separate immutable object
       returned only on success.
+
+v1.0 — Initial commit gate (Gaps 1-2).
+v1.1 — Gap 5: state oracle wired in (state_before_hash verified against
+        actual state).
 """
 
 from __future__ import annotations
@@ -24,6 +28,7 @@ from core.algebra import Action, Verdict
 from core.canonical import Packet
 from core.decision_record import DecisionRecord
 from core.version import SCHEMA_VERSION
+from core.state_oracle import StateOracle
 
 
 # ---------------------------------------------------------------------------
@@ -99,8 +104,8 @@ class DenialCode:
     NOT_EXECUTED         = "executed_flag_false"
     AUTHORITY_SCOPE      = "authority_scope_invalid"
     AUTHORITY_STALE      = "authority_stale"
-    STATE_HASH_MISMATCH  = "state_hash_mismatch"         # reserved
-    STATE_UNKNOWN        = "state_unknown"                # reserved
+    STATE_HASH_MISMATCH  = "state_hash_mismatch"
+    STATE_UNKNOWN        = "state_unknown"
     BOUNDARY_MISMATCH    = "commit_boundary_mismatch"     # reserved
 
 
@@ -113,6 +118,8 @@ def commit_gate(
     packet: Packet,
     state_before_hash: str,
     state_after_hash: str,
+    *,
+    state_oracle: Optional[StateOracle] = None,
 ) -> CommitResult:
     """The commit boundary.  Pure function.  No mutation.  No side effects."""
 
@@ -180,6 +187,28 @@ def commit_gate(
             ),
             denial_code=DenialCode.HASH_MISMATCH,
         )
+
+    # --- Failure 6 (Gap 5): State hash verification via oracle ---
+    if state_oracle is not None:
+        actual_state = state_oracle.current_state_hash(packet.object_ref)
+        if actual_state is None:
+            return CommitResult(
+                permitted=False,
+                denial_reason=(
+                    f"State oracle cannot determine current state for "
+                    f"'{packet.object_ref}'. Fail-closed."
+                ),
+                denial_code=DenialCode.STATE_UNKNOWN,
+            )
+        if actual_state != state_before_hash:
+            return CommitResult(
+                permitted=False,
+                denial_reason=(
+                    f"state_before_hash mismatch: claimed={state_before_hash}, "
+                    f"actual={actual_state}."
+                ),
+                denial_code=DenialCode.STATE_HASH_MISMATCH,
+            )
 
     # --- Failure 7 (Gap 1): Authority scope validation ---
     action = Action(action_type=packet.requested_action)
