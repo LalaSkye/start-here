@@ -244,7 +244,7 @@ class Evaluator:
             proof_status=proof_status,
             paradox_class=paradox_class,
             state_change="NONE",
-            trace=trace,
+            trace=tuple(trace),
             executed=executed,
         )
         self._records.append(record)
