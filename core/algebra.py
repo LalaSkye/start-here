@@ -56,22 +56,54 @@ class Actor:
 
 @dataclass(frozen=True)
 class Action:
-    """A named operation against a target object."""
+    """A named operation against a target object.
+
+    Delegates classification to the ActionRegistry (Layer 1).
+    The REGISTRY/MUTATING/HIGH_RISK frozensets are kept as backward-
+    compatible class attributes derived from DEFAULT_REGISTRY.
+    """
     action_type: str
 
-    # Closed-world action registry
+    # Backward-compatible class attributes — derived from DEFAULT_REGISTRY.
+    # Importing here would create a circular import, so we use a lazy
+    # classmethod pattern: _registry is set after action_registry.py loads.
+    _registry = None  # type: ignore[assignment]
+
+    # Keep the frozensets as backward-compatible fallbacks.
+    # These are overridden by the registry when available.
     REGISTRY: frozenset = frozenset({"read", "write", "delete", "deploy", "commit"})
     MUTATING: frozenset = frozenset({"write", "delete", "deploy", "commit"})
     HIGH_RISK: frozenset = frozenset({"delete", "deploy", "commit"})
 
+    @classmethod
+    def set_registry(cls, registry) -> None:
+        """Bind the Action class to a governed ActionRegistry.
+
+        Called once at import time by action_registry.py.
+        After this, is_known/is_mutating/is_high_risk delegate to the registry.
+        """
+        cls._registry = registry
+
     def is_known(self) -> bool:
+        if self._registry is not None:
+            return self._registry.is_known(self.action_type)
         return self.action_type in self.REGISTRY
 
     def is_mutating(self) -> bool:
+        if self._registry is not None:
+            return self._registry.is_mutating(self.action_type)
         return self.action_type in self.MUTATING
 
     def is_high_risk(self) -> bool:
+        if self._registry is not None:
+            return self._registry.is_high_risk(self.action_type)
         return self.action_type in self.HIGH_RISK
+
+    def registry_entry(self):
+        """Return the full ActionRegistryEntry for this action, or None."""
+        if self._registry is not None:
+            return self._registry.lookup(self.action_type)
+        return None
 
 
 @dataclass(frozen=True)
