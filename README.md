@@ -121,3 +121,8 @@ Any of the above → invalid decision record → no commit.
 ## Where Next
 
 See [links.md](links.md) for deeper repos. This repo is the entry surface only.
+
+---
+
+This repository demonstrates deterministic control using standard engineering techniques. No proprietary frameworks or external implementations are used.
+
