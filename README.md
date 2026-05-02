@@ -5,6 +5,12 @@ This shows a system deciding whether an action may execute before any state muta
 
 It is intentionally small. The point is to run it, inspect it, and verify the behaviour in one sitting.
 
+## What this does not prove
+
+This repository does not prove adoption, certification, standardisation, or production readiness.
+
+It demonstrates a bounded execution-control surface that can be run, inspected, and tested.
+
 ## Run It
 
 ```
