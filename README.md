@@ -26,6 +26,24 @@ Run a single scenario:
 python run_demo.py --scenario deny
 ```
 
+## Inspection Route
+
+If you are new to this work, inspect in this order:
+
+1. Run `python run_demo.py`
+2. Check the 12 runtime decisions
+3. Read the canonical invariant
+4. Inspect `core/commit_gate.py`
+5. Run `python -m pytest tests/ -v`
+
+The question this repo answers is narrow:
+
+**Can an action reach state mutation without a valid Decision Record?**
+
+Expected answer:
+
+**No.**
+
 ## What You Will See
 
 Twelve scenarios producing three distinct runtime decisions:
@@ -66,22 +84,6 @@ Twelve scenarios producing three distinct runtime decisions:
 
 > **No valid Decision Record → no state mutation.**
 
-## Reasoning Chessboard Adapter
-
-This repo is the entry board for the runtime-governance corpus.
-
-It maps the human-readable Reasoning Chessboard formation onto executable control:
-
-- boundary: what may move
-- transition: how movement is checked
-- behaviour: how pressure is handled
-- relation: where this repo sits in the corpus
-- failure: what illegal movement looks like
-- hidden state: what must be surfaced before movement
-- consequence: what happens when a condition fails
-
-See [`docs/reasoning_chessboard_adapter_v1.0.md`](docs/reasoning_chessboard_adapter_v1.0.md).
-
 ## Architecture
 
 **Layer 1 — Action Registry** (`core/action_registry.py`): Defines which action classes exist and what each class requires. Governed artefact with six mandatory fields per action. Bound at parse-time. Unknown actions → DENY.
@@ -108,7 +110,6 @@ input → PARSE → CANONICALISE → VALIDATE → EVALUATE → DECISION RECORD
 
 | File | What it does |
 |------|-------------|
-| `docs/reasoning_chessboard_adapter_v1.0.md` | Maps the ASR / Reasoning Chessboard formation onto the runtime corpus |
 | `core/action_registry.py` | Layer 1 — governed action surface |
 | `core/commit_gate.py` | Layer 2 — execution-binding commit boundary |
 | `core/decision_record.py` | Immutable decision record with decision_id |
@@ -120,6 +121,7 @@ input → PARSE → CANONICALISE → VALIDATE → EVALUATE → DECISION RECORD
 | `core/algebra.py` | Admissibility algebra + action primitives |
 | `run_demo.py` | Entry point |
 | `expected/` | Canonical outputs |
+| `docs/reasoning_chessboard_adapter_v1.0.md` | Internal adapter note mapping the reasoning formation onto the runtime corpus |
 
 ## Run Tests
 
@@ -140,6 +142,22 @@ python -m pytest tests/ -v
 7. Authority stale or scope-invalid
 
 Any of the above → invalid decision record → no commit.
+
+## Reasoning Chessboard Adapter
+
+This repo also includes an internal adapter note for readers following the wider runtime-governance corpus.
+
+It maps the human-readable Reasoning Chessboard formation onto executable control:
+
+- boundary: what may move
+- transition: how movement is checked
+- behaviour: how pressure is handled
+- relation: where this repo sits in the corpus
+- failure: what illegal movement looks like
+- hidden state: what must be surfaced before movement
+- consequence: what happens when a condition fails
+
+See [`docs/reasoning_chessboard_adapter_v1.0.md`](docs/reasoning_chessboard_adapter_v1.0.md).
 
 ## Where Next
 
