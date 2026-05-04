@@ -7,9 +7,9 @@ It is intentionally small. The point is to run it, inspect it, and verify the be
 
 ## What this does not prove
 
-This repository does not prove adoption, certification, standardisation, or production readiness.
+This repository does not prove adoption, certification, standardisation, production readiness, or path-universal deployment coverage.
 
-It demonstrates a bounded execution-control surface that can be run, inspected, and tested.
+It demonstrates a bounded execution-control surface that can be run, inspected, and tested on the demonstrated path.
 
 ## Run It
 
@@ -38,7 +38,7 @@ If you are new to this work, inspect in this order:
 
 The question this repo answers is narrow:
 
-**Can an action reach state mutation without a valid Decision Record?**
+**Can an action reach state mutation without a valid Decision Record on the demonstrated path?**
 
 Expected answer:
 
@@ -72,17 +72,23 @@ Twelve scenarios producing three distinct runtime decisions:
 ## What This Proves
 
 - Not every proposed action is allowed to run
-- The decision happens before execution
+- The decision happens before execution on the demonstrated path
 - Authority is explicit, not assumed
 - Ambiguous inputs do not silently pass
 - Malformed inputs fail cleanly
-- Replay attempts are detected and blocked
+- Replay attempts are detected and blocked on the demonstrated path
 - Contradiction paths collapse before reaching the gate
-- Every decision is hash-chained for tamper evidence
+- Every decision is canonically hashed. Tampering with a single decision record is detectable. Cross-decision chaining is not implemented.
+
+## Current hardening gap
+
+This repository currently demonstrates per-record canonical hashing, not cross-decision hash chaining.
+
+Cross-decision hash chaining is tracked as future hardening work in issue #1.
 
 ## Canonical Invariant
 
-> **No valid Decision Record → no state mutation.**
+> **No valid Decision Record → no state mutation on the demonstrated path.**
 
 ## Architecture
 
@@ -131,7 +137,7 @@ python -m pytest tests/ -v
 
 134 tests. All passing.
 
-## Canonical Failure Set (all enforced)
+## Canonical Failure Set (all enforced on the demonstrated path)
 
 1. No decision record
 2. Malformed decision record
@@ -141,7 +147,7 @@ python -m pytest tests/ -v
 6. State hash mismatch
 7. Authority stale or scope-invalid
 
-Any of the above → invalid decision record → no commit.
+Any of the above → invalid decision record → no commit on the demonstrated path.
 
 ## Reasoning Chessboard Adapter
 
