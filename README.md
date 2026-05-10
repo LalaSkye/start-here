@@ -5,6 +5,8 @@ This shows a system deciding whether an action may execute before any state muta
 
 It is intentionally small. The point is to run it, inspect it, and verify the behaviour in one sitting.
 
+> These repositories demonstrate narrow, path-local proof surfaces only. No claim of path-universal governance or production readiness is made.
+
 ## What this does not prove
 
 This repository does not prove adoption, certification, standardisation, production readiness, or path-universal deployment coverage.
