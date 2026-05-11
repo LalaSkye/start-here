@@ -1,5 +1,22 @@
 # start-here
 
+## Proof-surface boundary
+
+These repositories are research-grade, path-local proof surfaces.
+
+They do not claim:
+
+- production readiness
+- compliance or certification
+- enterprise deployment
+- path-universal governance
+- tamper-proofing
+- non-bypassability
+
+They demonstrate narrow refusal paths, receipt patterns, and execution-boundary mechanics that can be inspected, tested, and challenged.
+
+Each repo should be read as a bounded proof brick, not as a complete governance architecture.
+
 A minimal runnable demonstration of execution-boundary governance.
 This shows a system deciding whether an action may execute before any state mutation occurs.
 
