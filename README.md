@@ -4,15 +4,15 @@
 
 This repository is a public inspection surface, not full architecture disclosure.
 
-It shows the claim, evidence object, inspection path, and claim limit.
+It shows a bounded claim, a minimal evidence object, a public inspection path, and the claim limit.
 
 See [`PUBLIC_DISCLOSURE_BOUNDARY.md`](PUBLIC_DISCLOSURE_BOUNDARY.md).
 
 ## Proof-surface boundary
 
-These repositories are research-grade, path-local proof surfaces.
+This repository is a research-grade, path-local proof surface.
 
-They do not claim:
+It does not claim:
 
 - production readiness
 - compliance or certification
@@ -21,22 +21,15 @@ They do not claim:
 - tamper-proofing
 - non-bypassability
 
-They demonstrate narrow refusal paths, receipt patterns, and execution-boundary mechanics that can be inspected, tested, and challenged.
+It demonstrates a narrow execution-control behaviour that can be inspected, tested, and challenged.
 
-Each repo should be read as a bounded proof brick, not as a complete governance architecture.
-
-A minimal runnable demonstration of execution-boundary governance.
-This shows a system deciding whether an action may execute before any state mutation occurs.
-
-It is intentionally small. The point is to run it, inspect it, and verify the behaviour in one sitting.
-
-> These repositories demonstrate narrow, path-local proof surfaces only. No claim of path-universal governance, production readiness, or enterprise deployment is made.
+It should be read as a bounded proof object, not as a complete governance architecture.
 
 ## What this does not prove
 
 This repository does not prove adoption, certification, standardisation, production readiness, or path-universal deployment coverage.
 
-It demonstrates a bounded execution-control surface that can be run, inspected, and tested on the demonstrated path.
+It demonstrates a bounded execution-control surface on the demonstrated path.
 
 ## Run It
 
@@ -49,152 +42,70 @@ python run_demo.py
 No dependencies beyond Python 3.8+. No install step.
 
 Run a single scenario:
+
 ```
 python run_demo.py --scenario deny
 ```
 
-## Inspection Route
+## Inspection path
 
-If you are new to this work, inspect in this order:
+Run the demo and tests.
 
-1. Run `python run_demo.py`
-2. Check the 12 runtime decisions
-3. Read the canonical invariant
-4. Inspect `core/commit_gate.py`
-5. Run `python -m pytest tests/ -v`
+The narrow question this repo answers is:
 
-The question this repo answers is narrow:
-
-**Can an action reach state mutation without a valid Decision Record on the demonstrated path?**
+**Can an action reach state mutation without a valid decision record on the demonstrated path?**
 
 Expected answer:
 
 **No.**
 
-## What You Will See
+## What you will see
 
-Twelve scenarios producing three distinct runtime decisions:
+Twelve scenarios producing three runtime decisions:
 
-```
-========================================================
-  EXECUTION BOUNDARY — Decision Demo (steel)
-========================================================
-
-  [+] allow              -> ALLOW       (policy_allow_with_valid_authority)
-  [x] deny               -> DENY        (policy_violation)
-  [?] escalate           -> ESCALATE    (authority_ambiguous)
-  [x] malformed          -> DENY        (malformed_input)
-  [x] paradox_authority  -> DENY        (authority_contradiction)
-  [x] paradox_exec       -> DENY        (execution_contradiction)
-  [x] paradox_inheritance-> DENY        (authority_contradiction)
-  [x] paradox_state      -> DENY        (state_contradiction)
-  [x] paradox_structural -> DENY        (structural_contradiction)
-  [x] paradox_temporal   -> DENY        (temporal_contradiction)
-  [x] replay             -> DENY        (replay_detected)
-  [x] unknown            -> DENY        (unknown_action)
-
-  ALL 12 SCENARIOS PASSED
+```text
+ALLOW
+DENY
+ESCALATE
 ```
 
-## What This Proves
+The demonstrated path includes allowed, denied, ambiguous, malformed, contradiction, replay, and unknown-action cases.
 
-- Not every proposed action is allowed to run
-- The decision happens before execution on the demonstrated path
-- Authority is explicit, not assumed
-- Ambiguous inputs do not silently pass
-- Malformed inputs fail cleanly
-- Replay attempts are detected and blocked on the demonstrated path
-- Contradiction paths collapse before reaching the gate
-- Every decision is canonically hashed. Tampering with a single decision record is detectable. Cross-decision chaining is not implemented.
+## What this proves
+
+On the demonstrated path:
+
+- not every proposed action is allowed to run
+- the decision occurs before state mutation
+- ambiguous inputs do not silently pass
+- malformed inputs fail closed
+- replay attempts are blocked
+- contradiction cases do not proceed
+- decision records are canonically hashed
 
 ## Current hardening gap
 
-This repository currently demonstrates per-record canonical hashing, not cross-decision hash chaining.
+This repository demonstrates per-record canonical hashing, not cross-decision hash chaining.
 
-Cross-decision hash chaining is tracked as future hardening work in issue #1.
+## Canonical invariant
 
-## Canonical Invariant
+> **No valid decision record -> no state mutation on the demonstrated path.**
 
-> **No valid Decision Record → no state mutation on the demonstrated path.**
-
-## Architecture
-
-**Layer 1 — Action Registry** (`core/action_registry.py`): Defines which action classes exist and what each class requires. Governed artefact with six mandatory fields per action. Bound at parse-time. Unknown actions → DENY.
-
-**Layer 2 — Commit Gate** (`core/commit_gate.py`): The Decision Record is not an audit artefact — it is the transition licence. The commit gate converts the record from evaluation output into a required input for state mutation. Pure function. Fail-closed. Nine checks including authority scope, state verification, and boundary validation.
-
-**Layer 3 — Paradox Vector** (`core/paradox.py`): Detects inputs that contain mutually incompatible conditions — authority claimed but absent, execution smuggled inside non-exec scope, stale approvals used as current. Contradiction paths collapse into a sealed sink.
-
-**Layer 4 — Stress Harness** (`tests/test_core/test_invariants.py`): 10 bulkhead invariants. If any fail, the implementation is broken.
-
-```
-input → PARSE → CANONICALISE → VALIDATE → EVALUATE → DECISION RECORD
-                                                          ↓
-                                              COMMIT GATE (Layer 2)
-                                                          ↓
-                                              state_oracle verifies state
-                                              boundary_context validates where
-                                              authority_scope validates who
-                                                          ↓
-                                              CommittedRecord binds decision → state
-```
-
-## Files Worth Reading
-
-| File | What it does |
-|------|-------------|
-| `core/action_registry.py` | Layer 1 — governed action surface |
-| `core/commit_gate.py` | Layer 2 — execution-binding commit boundary |
-| `core/decision_record.py` | Immutable decision record with decision_id |
-| `core/evaluator.py` | 8-stage evaluation pipeline |
-| `core/state_oracle.py` | State verification at commit boundary |
-| `core/boundary_context.py` | Environment + boundary class validation |
-| `core/paradox.py` | Contradiction detection + sealed sink |
-| `core/proof.py` | Proof-carrying packet obligations |
-| `core/algebra.py` | Admissibility algebra + action primitives |
-| `run_demo.py` | Entry point |
-| `expected/` | Canonical outputs |
-| `docs/reasoning_chessboard_adapter_v1.0.md` | Internal adapter note mapping the reasoning formation onto the runtime corpus |
-
-## Run Tests
+## Tests
 
 ```
 python -m pytest tests/ -v
 ```
 
-134 tests. All passing.
+## Scope note
 
-## Canonical Failure Set (all enforced on the demonstrated path)
+Implementation files are present so the demonstrated path can be run and inspected.
 
-1. No decision record
-2. Malformed decision record
-3. Missing mandatory fields
-4. Evidence / hash mismatch
-5. Commit boundary mismatch
-6. State hash mismatch
-7. Authority stale or scope-invalid
+This README does not publish an architecture map, component sequence, orchestration model, or protected system design.
 
-Any of the above → invalid decision record → no commit on the demonstrated path.
+## Where next
 
-## Reasoning Chessboard Adapter
-
-This repo also includes an internal adapter note for readers following the wider runtime-governance corpus.
-
-It maps the human-readable Reasoning Chessboard formation onto executable control:
-
-- boundary: what may move
-- transition: how movement is checked
-- behaviour: how pressure is handled
-- relation: where this repo sits in the corpus
-- failure: what illegal movement looks like
-- hidden state: what must be surfaced before movement
-- consequence: what happens when a condition fails
-
-See [`docs/reasoning_chessboard_adapter_v1.0.md`](docs/reasoning_chessboard_adapter_v1.0.md).
-
-## Where Next
-
-See [links.md](links.md) for deeper repos. This repo is the entry surface only.
+See [`links.md`](links.md) for bounded public inspection routes.
 
 ---
 
