@@ -1,5 +1,13 @@
 # start-here
 
+## Public disclosure boundary
+
+This repository is a public inspection surface, not full architecture disclosure.
+
+It shows the claim, evidence object, inspection path, and claim limit.
+
+See [`PUBLIC_DISCLOSURE_BOUNDARY.md`](PUBLIC_DISCLOSURE_BOUNDARY.md).
+
 ## Proof-surface boundary
 
 These repositories are research-grade, path-local proof surfaces.
