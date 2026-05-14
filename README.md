@@ -1,5 +1,9 @@
 # start-here
 
+**Ricky Jones / AlvianTech / TrinityOS — execution-boundary AI governance.**
+
+Governance becomes real at the execution boundary: where an AI-supported system must either prove authority to act or fail closed with an inspectable refusal receipt.
+
 ## Public disclosure boundary
 
 This repository is a public inspection surface, not full architecture disclosure.
@@ -105,7 +109,23 @@ This README does not publish an architecture map, component sequence, orchestrat
 
 ## Where next
 
-See [`links.md`](links.md) for bounded public inspection routes.
+This repo is the entry surface only.
+
+Primary execution-boundary proof surface:
+
+[https://github.com/LalaSkye/commit-gate-core](https://github.com/LalaSkye/commit-gate-core)
+
+Author / identity surface:
+
+[https://github.com/LalaSkye](https://github.com/LalaSkye)
+
+LinkedIn public surface:
+
+[https://www.linkedin.com/in/ricky-jones-trinityos](https://www.linkedin.com/in/ricky-jones-trinityos)
+
+Deeper repo route:
+
+See [`links.md`](links.md) for deeper repos.
 
 ---
 
