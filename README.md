@@ -1,5 +1,8 @@
 # start-here
 
+**Research Surface Map:** [lalaSkye.github.io/inspection-surface](https://lalaskye.github.io/inspection-surface/) — full index, provenance, and cross-links
+
+
 **Ricky Jones / AlvianTech / TrinityOS — execution-boundary AI governance.**
 
 Governance becomes real at the execution boundary: where an AI-supported system must either prove authority to act or fail closed with an inspectable refusal receipt.
