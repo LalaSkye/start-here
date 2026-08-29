@@ -38,6 +38,8 @@ This repository does not prove adoption, certification, standardisation, product
 
 It demonstrates a bounded execution-control surface on the demonstrated path.
 
+It is not `commit-gate-core`. That repo is an authorize-only kernel and does not apply payloads.
+
 ## Run It
 
 ```
@@ -98,6 +100,8 @@ This repository demonstrates per-record canonical hashing, not cross-decision ha
 
 > **No valid decision record -> no state mutation on the demonstrated path.**
 
+That invariant belongs to this demo. Do not read it as the claim of `commit-gate-core`.
+
 ## Tests
 
 ```
@@ -114,9 +118,13 @@ This README does not publish an architecture map, component sequence, orchestrat
 
 This repo is the entry surface only.
 
-Primary execution-boundary proof surface:
+Authorize-only kernel (binds payload bytes; does not apply them):
 
 [https://github.com/LalaSkye/commit-gate-core](https://github.com/LalaSkye/commit-gate-core)
+
+Standing versus admission lab:
+
+[https://github.com/LalaSkye/obligation-bound-policy-admission-lab](https://github.com/LalaSkye/obligation-bound-policy-admission-lab)
 
 Author / identity surface:
 
