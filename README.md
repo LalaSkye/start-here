@@ -1,11 +1,7 @@
 # start-here
 
-**Research Surface Map:** [lalaSkye.github.io/inspection-surface](https://lalaskye.github.io/inspection-surface/) — full index, provenance, and cross-links
-
-
-**Ricky Jones / AlvianTech / TrinityOS — execution-boundary AI governance.**
-
-Governance becomes real at the execution boundary: where an AI-supported system must either prove authority to act or fail closed with an inspectable refusal receipt.
+A path-local demo for one question: can the demonstrated action reach state
+mutation without a valid decision record?
 
 ## Public disclosure boundary
 
@@ -17,7 +13,7 @@ See [`PUBLIC_DISCLOSURE_BOUNDARY.md`](PUBLIC_DISCLOSURE_BOUNDARY.md).
 
 ## Proof-surface boundary
 
-This repository is a research-grade, path-local proof surface.
+This repository is a bounded, path-local proof surface.
 
 It does not claim:
 
@@ -126,17 +122,8 @@ Standing versus admission lab:
 
 [https://github.com/LalaSkye/obligation-bound-policy-admission-lab](https://github.com/LalaSkye/obligation-bound-policy-admission-lab)
 
-Author / identity surface:
-
-[https://github.com/LalaSkye](https://github.com/LalaSkye)
-
-LinkedIn public surface:
-
-[https://www.linkedin.com/in/ricky-jones-trinityos](https://www.linkedin.com/in/ricky-jones-trinityos)
-
-Deeper repo route:
-
-See [`links.md`](links.md) for deeper repos.
+Those are separate objects. This demo's mutation-path evidence does not
+transfer to either one.
 
 ---
 

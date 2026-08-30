@@ -1,7 +1,11 @@
-# Where Next
+# Archived Routing Note
 
-Public repo routing has been reduced to prevent this file being read as an architecture map.
+This file previously routed readers into a wider repository map.
 
-For the disclosure boundary, see [`PUBLIC_DISCLOSURE_BOUNDARY.md`](PUBLIC_DISCLOSURE_BOUNDARY.md).
+The active public route is now the three-object sequence in `README.md`:
 
-This repository should be read as the current public entry surface.
+1. `start-here`
+2. `commit-gate-core`
+3. `obligation-bound-policy-admission-lab`
+
+No wider architecture or proof inheritance is asserted here.
