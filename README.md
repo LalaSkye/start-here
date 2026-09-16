@@ -1,5 +1,7 @@
 # start-here
 
+> **Current public starting point:** [stop-machine](https://github.com/LalaSkye/stop-machine). This repository remains available for inspection and is not the current starting point. See [SUPERSEDED.md](SUPERSEDED.md).
+
 A path-local demo for one question: can the demonstrated action reach state
 mutation without a valid decision record?
 
@@ -112,7 +114,7 @@ This README does not publish an architecture map, component sequence, orchestrat
 
 ## Where next
 
-This repo is the entry surface only.
+This repo remains an inspection surface only.
 
 Authorize-only kernel (binds payload bytes; does not apply them):
 
