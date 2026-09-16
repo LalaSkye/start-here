@@ -5,17 +5,17 @@ Repository: `LalaSkye/start-here`
 
 ## Purpose
 
-This file keeps the repository's claim surface bounded to its role as a runnable entry surface.
+This file keeps the repository's claim surface bounded to its role as a runnable inspection surface.
 
 ## Allowed claims
 
 This repository may be described as:
 
 - a bounded artefact
-- an entry surface
+- an inspection surface
 - a runnable path-local demonstration
 - a minimal inspection route
-- a reader-routing surface for the execution-boundary repo chain
+- a bounded inspection object
 
 ## Mechanism claim
 
@@ -55,7 +55,7 @@ Do not claim cross-decision receipt-chain custody until the implementation and t
 
 ## Public sentence
 
-> This is the runnable front door for inspecting a narrow execution-boundary demo before moving into the deeper proof surfaces.
+> This is a runnable object for inspecting a narrow execution-boundary demo. It does not designate a current public starting point.
 
 ## Stop line
 

@@ -1,3 +1,7 @@
-Superseded as the public halt primitive by https://github.com/LalaSkye/stop-machine
+# Historical Routing Note
 
-This repo stays for inspection. It is not the object to start from.
+This file records an earlier routing designation involving `stop-machine`.
+
+Public routing is under revalidation. No repository is currently designated as
+the public starting point. This repository remains available as a bounded
+inspection object.

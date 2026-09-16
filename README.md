@@ -1,6 +1,6 @@
 # start-here
 
-> **Current public starting point:** [stop-machine](https://github.com/LalaSkye/stop-machine). This repository remains available for inspection and is not the current starting point. See [SUPERSEDED.md](SUPERSEDED.md).
+> **Public routing status:** Under revalidation. No repository is currently designated as the public starting point. This repository remains available as a bounded inspection object.
 
 A path-local demo for one question: can the demonstrated action reach state
 mutation without a valid decision record?

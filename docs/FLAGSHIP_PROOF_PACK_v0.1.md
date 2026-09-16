@@ -4,9 +4,9 @@
 
 **Owner:** Ricky Jones / AlvianTech / TrinityOS
 
-**Purpose:** Provide one senior-reviewer entry surface for the execution-boundary governance work.
+**Purpose:** Preserve a bounded senior-reviewer inspection scaffold for the execution-boundary governance work.
 
-This page does not introduce a new architecture claim. It routes an inspector through the existing bounded proof surfaces.
+This page does not introduce a new architecture claim. Its former route is retained as historical scaffolding while public routing is under revalidation.
 
 ---
 
@@ -22,7 +22,7 @@ The control question is:
 
 ## Ten-minute inspection route
 
-1. Open the canonical entry surface: [start-here](https://github.com/LalaSkye/start-here)
+1. Inspect the bounded demo object: [start-here](https://github.com/LalaSkye/start-here)
 2. Run the minimal demonstration and tests.
 3. Open the primary proof surface: [commit-gate-core](https://github.com/LalaSkye/commit-gate-core)
 4. Inspect the decision record, refusal behaviour, receipt output, replay handling, and stated claim limits.
@@ -32,7 +32,7 @@ The control question is:
 
 ## Bounded proof objects
 
-### Canonical entry
+### Bounded demo object
 
 [start-here](https://github.com/LalaSkye/start-here)
 
