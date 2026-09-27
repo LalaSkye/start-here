@@ -6,6 +6,13 @@ resource being read, permitted, written, then read again by the same bound
 fixture.
 """
 
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from core.canonical import Packet
 from core.evaluator import Evaluator
 from core.measured_mutation import InMemoryMeasuredResource, MeasuredMutationBoundary
