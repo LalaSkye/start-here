@@ -1,16 +1,18 @@
-"""STATE_ORACLE_v1 — State verification at commit boundary.
+"""STATE_ORACLE_v1 — Pre-state verification at commit boundary.
 
-The state oracle is the mechanism that makes the commit gate truthful
-about the state it claims to change.
+The state oracle lets the pure commit gate compare a caller-presented
+`state_before_hash` with the oracle's current view of that object.
 
 Without it:
-    The gate accepts state_before_hash and state_after_hash as arguments
-    but never verifies them against reality.
+    the gate does not verify the caller-presented pre-state.
 
 With it:
-    The gate asks the oracle "what is the current state hash?" and
-    compares that to state_before_hash.  If they don't match, the
-    commit is denied.  You cannot mutate state you don't actually hold.
+    the gate asks "what is the current state hash?" and compares that result
+    with `state_before_hash`. A mismatch or unknown state denies commit
+    permission.
+
+The oracle does not observe post-state, apply mutation, prove custody of the
+underlying world object, or turn `state_after_hash` into measurement evidence.
 
 Design constraints:
     - StateOracle is a protocol (abstract interface).

@@ -1,8 +1,8 @@
-"""Measured mutation fixture tests.
+"""Adversarial tests for the measured mutation fixture.
 
-These tests close one narrow evidence gap in start-here:
-the stronger fixture measures a concrete in-memory object before and after the
-effect instead of accepting a caller-supplied post-state hash.
+The claim is intentionally narrow: one exact InMemoryMeasuredResource is bound
+to both the live-state check and the effect path, and its state is observed
+before and after the attempted consequence using one fixed hash rule.
 """
 
 from __future__ import annotations
@@ -14,10 +14,10 @@ import pytest
 from core.canonical import Packet
 from core.evaluator import Evaluator
 from core.measured_mutation import (
+    MEASUREMENT_RULE,
     InMemoryMeasuredResource,
-    InMemoryStateObserver,
-    InMemoryWriteAdapter,
     MeasuredMutationBoundary,
+    canonical_state_hash,
 )
 
 
@@ -59,27 +59,51 @@ def _record_and_packet(packet_id: str = "PKT-MEASURED-001"):
     return record, packet
 
 
-def _fixture():
-    resource = InMemoryMeasuredResource({
-        "/data/file": {"value": "before", "version": 1},
-    })
-    observer = InMemoryStateObserver(resource)
-    effect = InMemoryWriteAdapter(resource)
-    boundary = MeasuredMutationBoundary(observer=observer, effect=effect)
-    return resource, observer, effect, boundary
+def _resource(**kwargs):
+    return InMemoryMeasuredResource(
+        {"/data/file": {"value": "before", "version": 1}},
+        **kwargs,
+    )
 
 
-def test_authorised_mutation_is_measured_from_concrete_state():
+def _boundary(resource: InMemoryMeasuredResource):
+    return MeasuredMutationBoundary(resource=resource)
+
+
+def test_same_store_contract_is_constructor_enforced():
+    sig = inspect.signature(MeasuredMutationBoundary)
+    assert tuple(sig.parameters) == ("resource",)
+
+    resource = _resource()
+    boundary = _boundary(resource)
+
+    assert boundary._resource is resource
+
+    class MerelySimilarResource(InMemoryMeasuredResource):
+        pass
+
+    with pytest.raises(TypeError):
+        MeasuredMutationBoundary(resource=MerelySimilarResource({
+            "/data/file": {"value": "before", "version": 1}
+        }))
+
+
+def test_authorised_mutation_is_measured_from_same_concrete_resource():
     record, packet = _record_and_packet("PKT-MEASURED-ALLOW")
-    resource, observer, effect, boundary = _fixture()
+    resource = _resource()
+    boundary = _boundary(resource)
 
-    expected_pre = observer.observe_state_hash(packet.object_ref)
+    before_snapshot = resource.snapshot(packet.object_ref)
+    before_hash = canonical_state_hash(before_snapshot)
+
     receipt = boundary.attempt(
         record=record,
         packet=packet,
         payload={"value": "after", "version": 2},
     )
-    expected_post = observer.observe_state_hash(packet.object_ref)
+
+    after_snapshot = resource.snapshot(packet.object_ref)
+    after_hash = canonical_state_hash(after_snapshot)
 
     assert receipt.gate_permitted is True
     assert receipt.effect_attempted is True
@@ -87,16 +111,20 @@ def test_authorised_mutation_is_measured_from_concrete_state():
     assert receipt.measurement_complete is True
     assert receipt.state_changed is True
     assert receipt.code == "MEASURED:STATE_CHANGED"
-    assert receipt.pre_state_hash == expected_pre
-    assert receipt.post_state_hash == expected_post
+    assert receipt.pre_state_hash == before_hash
+    assert receipt.post_state_hash == after_hash
+    assert before_snapshot != after_snapshot
     assert receipt.pre_state_hash != receipt.post_state_hash
-    assert effect.mutation_calls == 1
-    assert resource.snapshot(packet.object_ref) == {"value": "after", "version": 2}
+    assert resource.effect_calls == 1
+    assert resource.mutation_calls == 1
+    assert receipt.measurement_rule == MEASUREMENT_RULE
+    assert receipt.post_state_hash != MeasuredMutationBoundary._UNOBSERVED_POST_STATE
 
 
-def test_refusal_measures_unchanged_state_and_never_calls_effect():
+def test_refusal_control_never_calls_effect_and_same_resource_stays_unchanged():
     _, packet = _record_and_packet("PKT-MEASURED-REFUSE")
-    resource, observer, effect, boundary = _fixture()
+    resource = _resource()
+    boundary = _boundary(resource)
 
     before = resource.snapshot(packet.object_ref)
     receipt = boundary.attempt(
@@ -112,16 +140,21 @@ def test_refusal_measures_unchanged_state_and_never_calls_effect():
     assert receipt.measurement_complete is True
     assert receipt.state_changed is False
     assert receipt.pre_state_hash == receipt.post_state_hash
-    assert effect.mutation_calls == 0
+    assert resource.effect_calls == 0
+    assert resource.mutation_calls == 0
     assert before == after
 
 
-def test_caller_cannot_supply_post_state_hash_to_the_measurement_boundary():
+def test_caller_cannot_supply_post_state_hash_or_separate_witnesses():
     record, packet = _record_and_packet("PKT-MEASURED-NO-INJECT")
-    resource, observer, effect, boundary = _fixture()
+    resource = _resource()
+    boundary = _boundary(resource)
     before = resource.snapshot(packet.object_ref)
 
-    assert "state_after_hash" not in inspect.signature(boundary.attempt).parameters
+    attempt_sig = inspect.signature(boundary.attempt)
+    assert "state_after_hash" not in attempt_sig.parameters
+    assert "observer" not in attempt_sig.parameters
+    assert "effect" not in attempt_sig.parameters
 
     with pytest.raises(TypeError):
         boundary.attempt(
@@ -131,59 +164,44 @@ def test_caller_cannot_supply_post_state_hash_to_the_measurement_boundary():
             state_after_hash="forged-zero",  # type: ignore[call-arg]
         )
 
-    assert effect.mutation_calls == 0
+    assert resource.effect_calls == 0
     assert resource.snapshot(packet.object_ref) == before
 
 
-def test_post_state_is_observed_not_taken_from_effect_return_value():
+def test_effect_return_is_discarded_even_when_it_equals_actual_post_hash():
     record, packet = _record_and_packet("PKT-MEASURED-RETURN")
 
-    resource = InMemoryMeasuredResource({
-        "/data/file": {"value": "before", "version": 1},
-    })
-    observer = InMemoryStateObserver(resource)
-
-    class MisreportingEffect:
-        def __init__(self) -> None:
-            self.calls = 0
-
-        def apply(self, *, object_ref, action, payload):
-            self.calls += 1
-            resource._write(object_ref, payload)
-            return "sha256:caller-supplied-fiction"
-
-    effect = MisreportingEffect()
-    boundary = MeasuredMutationBoundary(observer=observer, effect=effect)
+    expected_after = {"value": "after", "version": 2}
+    actual_hash = canonical_state_hash(expected_after)
+    resource = _resource(effect_return=actual_hash)
+    boundary = _boundary(resource)
 
     receipt = boundary.attempt(
         record=record,
         packet=packet,
-        payload={"value": "after", "version": 2},
+        payload=expected_after,
     )
 
-    assert effect.calls == 1
+    assert resource.effect_calls == 1
+    assert resource.mutation_calls == 1
     assert receipt.measurement_complete is True
     assert receipt.state_changed is True
-    assert receipt.post_state_hash == observer.observe_state_hash(packet.object_ref)
-    assert receipt.post_state_hash != "sha256:caller-supplied-fiction"
+    assert receipt.post_state_hash == canonical_state_hash(
+        resource.snapshot(packet.object_ref)
+    )
+    # Same bytes are deliberately used as the adapter's return value. The
+    # source cannot be distinguished by equality, so the contract removes the
+    # return channel from MeasuredMutationBoundary entirely.
+    assert receipt.post_state_hash == actual_hash
 
 
-def test_pre_state_drift_refuses_before_effect():
+def test_pre_state_drift_between_first_read_and_gate_read_refuses_before_effect():
     record, packet = _record_and_packet("PKT-MEASURED-DRIFT")
-    resource, observer, effect, boundary = _fixture()
-
-    class DriftBetweenReads:
-        def __init__(self) -> None:
-            self.calls = 0
-
-        def observe_state_hash(self, object_ref: str):
-            self.calls += 1
-            if self.calls == 2:
-                resource._write(object_ref, {"value": "drifted", "version": 99})
-            return observer.observe_state_hash(object_ref)
-
-    drifting_observer = DriftBetweenReads()
-    boundary = MeasuredMutationBoundary(observer=drifting_observer, effect=effect)
+    resource = _resource(
+        drift_on_observation=2,
+        drift_payload={"value": "drifted", "version": 99},
+    )
+    boundary = _boundary(resource)
 
     receipt = boundary.attempt(
         record=record,
@@ -193,23 +211,19 @@ def test_pre_state_drift_refuses_before_effect():
 
     assert receipt.gate_permitted is False
     assert receipt.effect_attempted is False
-    assert effect.mutation_calls == 0
+    assert resource.effect_calls == 0
+    assert resource.mutation_calls == 0
+    assert resource.external_drift_calls == 1
+    assert receipt.state_changed is True
+    assert receipt.measurement_complete is True
     assert "state_hash_mismatch" in receipt.code
+    assert resource.snapshot(packet.object_ref) == {"value": "drifted", "version": 99}
 
 
-def test_effect_failure_does_not_claim_successful_measurement():
-    record, packet = _record_and_packet("PKT-MEASURED-FAIL")
-
-    resource = InMemoryMeasuredResource({
-        "/data/file": {"value": "before", "version": 1},
-    })
-    observer = InMemoryStateObserver(resource)
-
-    class FailingEffect:
-        def apply(self, *, object_ref, action, payload):
-            raise RuntimeError("synthetic failure")
-
-    boundary = MeasuredMutationBoundary(observer=observer, effect=FailingEffect())
+def test_pre_state_unobservable_fails_closed_without_gate_effect_or_measurement():
+    record, packet = _record_and_packet("PKT-MEASURED-PRE-UNOBS")
+    resource = _resource(unavailable_observations=frozenset({1}))
+    boundary = _boundary(resource)
 
     receipt = boundary.attempt(
         record=record,
@@ -217,9 +231,100 @@ def test_effect_failure_does_not_claim_successful_measurement():
         payload={"value": "after", "version": 2},
     )
 
+    assert receipt.gate_permitted is False
+    assert receipt.effect_attempted is False
+    assert receipt.effect_completed is False
+    assert receipt.measurement_complete is False
+    assert receipt.state_changed is None
+    assert receipt.pre_state_hash is None
+    assert receipt.post_state_hash is None
+    assert receipt.code == "DENY:PRE_STATE_UNOBSERVABLE"
+    assert resource.effect_calls == 0
+    assert resource.mutation_calls == 0
+
+
+def test_post_state_unobservable_never_becomes_measured_success():
+    record, packet = _record_and_packet("PKT-MEASURED-POST-UNOBS")
+    # Authorised path reads three times: pre, gate live-state, post.
+    resource = _resource(unavailable_observations=frozenset({3}))
+    boundary = _boundary(resource)
+
+    receipt = boundary.attempt(
+        record=record,
+        packet=packet,
+        payload={"value": "after", "version": 2},
+    )
+
+    assert resource.mutation_calls == 1
+    assert resource.snapshot(packet.object_ref) == {"value": "after", "version": 2}
+    assert receipt.gate_permitted is True
+    assert receipt.effect_attempted is True
+    assert receipt.effect_completed is True
+    assert receipt.measurement_complete is False
+    assert receipt.state_changed is None
+    assert receipt.post_state_hash is None
+    assert receipt.code == "ERROR:POST_STATE_UNOBSERVABLE"
+    assert not receipt.code.startswith("MEASURED:")
+
+
+def test_effect_failure_before_write_reports_no_observed_change():
+    record, packet = _record_and_packet("PKT-MEASURED-FAIL-BEFORE")
+    resource = _resource(effect_failure="before_write")
+    boundary = _boundary(resource)
+
+    receipt = boundary.attempt(
+        record=record,
+        packet=packet,
+        payload={"value": "after", "version": 2},
+    )
+
+    assert resource.effect_calls == 1
+    assert resource.mutation_calls == 0
     assert receipt.gate_permitted is True
     assert receipt.effect_attempted is True
     assert receipt.effect_completed is False
     assert receipt.measurement_complete is True
     assert receipt.state_changed is False
     assert receipt.code == "ERROR:EFFECT_FAILED:RuntimeError"
+
+
+def test_partial_write_then_raise_keeps_effect_failure_and_reports_observed_change():
+    record, packet = _record_and_packet("PKT-MEASURED-PARTIAL")
+    resource = _resource(effect_failure="after_write")
+    boundary = _boundary(resource)
+
+    receipt = boundary.attempt(
+        record=record,
+        packet=packet,
+        payload={"value": "after", "version": 2},
+    )
+
+    assert resource.effect_calls == 1
+    assert resource.mutation_calls == 1
+    assert resource.snapshot(packet.object_ref) == {"value": "after", "version": 2}
+    assert receipt.gate_permitted is True
+    assert receipt.effect_attempted is True
+    assert receipt.effect_completed is False
+    assert receipt.measurement_complete is True
+    assert receipt.state_changed is True
+    assert receipt.pre_state_hash != receipt.post_state_hash
+    assert receipt.code == "ERROR:EFFECT_FAILED:RuntimeError"
+    assert not receipt.code.startswith("MEASURED:")
+
+
+def test_legacy_commit_gate_sentinel_never_enters_measurement_receipt():
+    record, packet = _record_and_packet("PKT-MEASURED-SENTINEL")
+    resource = _resource()
+    boundary = _boundary(resource)
+
+    receipt = boundary.attempt(
+        record=record,
+        packet=packet,
+        payload={"value": "after", "version": 2},
+    )
+    exported = receipt.to_dict()
+
+    assert MeasuredMutationBoundary._UNOBSERVED_POST_STATE not in exported.values()
+    assert receipt.post_state_hash == canonical_state_hash(
+        resource.snapshot(packet.object_ref)
+    )

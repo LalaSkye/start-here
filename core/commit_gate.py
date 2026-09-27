@@ -1,10 +1,11 @@
 """COMMIT_GATE_v1.2 — Execution-binding commit boundary (pure).
 
-The commit gate is the Layer 2 mechanism that converts the Decision Record
-from an *output* of evaluation into a *required input* for state mutation.
+The commit gate is the Layer 2 permission boundary that converts the Decision
+Record from an *output* of evaluation into a required input for commit
+permission. This module is pure and does not perform state mutation.
 
-Canonical invariant (frozen):
-    No valid Decision Record at commit time = no state mutation.
+Canonical invariant for this object:
+    No valid Decision Record at commit time = no commit permission from this gate.
 
 Design constraints:
     - Pure function.  No hidden state.  No side effects.  No mutation.
@@ -63,10 +64,11 @@ def authority_sufficient(action_type: str, authority_type: str) -> bool:
 
 @dataclass(frozen=True)
 class CommittedRecord:
-    """Immutable proof that a commit was authorised.
+    """Immutable record that this gate authorised the presented commit inputs.
 
-    Binds a decision_id to the resulting state hash.
-    Produced only by the commit gate on success.
+    `state_after_hash` is caller-presented legacy plumbing. This pure gate does
+    not observe post-state and therefore does not treat that field as measured
+    evidence of a resulting world state.
     """
     decision_id: str
     packet_hash: str
@@ -133,7 +135,8 @@ def commit_gate(
         record:            The DecisionRecord that must authorise this commit.
         packet:            The original Packet that was evaluated.
         state_before_hash: Hash of state before the proposed mutation.
-        state_after_hash:  Hash of state after the proposed mutation.
+        state_after_hash:  Caller-presented legacy post-state label. This pure
+                           gate does not observe or verify post-state.
         state_oracle:      Optional. If provided, state_before_hash is verified
                            against the oracle's view of current state.
                            If not provided, state verification is skipped

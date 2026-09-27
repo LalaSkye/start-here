@@ -17,11 +17,11 @@ It does not claim:
 
 ## What it does claim
 
-It demonstrates one bounded, inspectable behaviour.
+It contains two distinct bounded proof objects: the original decision/commit demo and the separate measured in-memory mutation fixture.
 
-The claim is local: this path, under these conditions, behaves as described.
+Each claim is local to its own path, conditions and evidence. Evidence from one object does not inherit into the other.
 
-That claim can be tested. The test is in the repository.
+Those claims can be tested from their named inspection paths in the repository.
 
 ## Inspection standard
 
