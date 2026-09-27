@@ -1,10 +1,10 @@
-"""Protected invariants — commit gate.
+"""Protected invariants — pure commit-permission gate.
 
-These are the structural guarantees of the commit boundary.
-If any of these fail, the system permits ungoverned state mutation.
+These tests exercise the structural guarantees of the permission boundary.
+The module itself performs no world mutation.
 
-Every test here maps to the canonical freeze:
-    "No valid Decision Record at commit time = no state mutation."
+Every test here maps to the bounded gate invariant:
+    "No valid Decision Record at commit time = no commit permission."
 
 Test naming convention:
     test_CG{N}_{invariant_name}

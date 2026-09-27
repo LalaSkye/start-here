@@ -25,7 +25,7 @@ Safe wording for the original decision/commit demo:
 
 Safe wording for the measured-mutation fixture:
 
-> On one instrumented in-memory write path, `start-here` observes the concrete resource before and after the effect: denied attempts do not call the effect adapter and remain unchanged, while the authorised control produces an observed state change.
+> On one exact instrumented in-memory write path, the included denial control makes no effect call and produces equal first/final reads of the same bound resource; the authorised control writes that same resource and produces unequal first/final reads under the fixed `canonical-json-sha256:v1` rule.
 
 These are separate bounded proof objects. Evidence from one must not be used to enlarge the claim of the other.
 
@@ -57,10 +57,9 @@ Do not claim:
 
 The repository currently demonstrates per-record canonical hashing, not cross-decision hash chaining.
 
-The measured-mutation fixture uses one in-memory resource, one read-only observer
-interface and one write adapter. It does not establish production atomicity,
-independent third-party observation, durable execution custody, or elimination
-of every possible effect-capable path outside that fixture.
+The measured-mutation fixture binds one exact `InMemoryMeasuredResource` into the boundary. Observation and effect are not separately injectable: both address that same instance and `object_ref`, and the hash rule is fixed. The resource lock closes interleaving only through this fixture's own in-memory read/write methods during one attempt.
+
+It does not establish production atomicity, independent third-party observation, durable execution custody, or elimination of every possible effect-capable path outside that fixture.
 
 Do not claim cross-decision receipt-chain custody until the implementation and tests prove it.
 

@@ -6,15 +6,16 @@ Evidence class: entry surface / runnable path-local demonstration / bounded arte
 
 ## Object
 
-`start-here` is the entry surface for the execution-boundary governance repo chain.
+`start-here` is a bounded inspection surface containing two distinct proof objects.
 
-It provides a minimal runnable demonstration showing a system deciding whether an action may execute before any state mutation occurs.
+The original decision/commit demo shows a system deciding whether commit permission may be returned. The separate measured-mutation fixture binds one exact in-memory resource, attempts one permitted or refused write path, and reads that same resource before and after. Evidence does not inherit between the two objects.
 
 ## What this repository does
 
 - Provides a quick runnable inspection route.
-- Demonstrates runtime decisions before execution on the demonstrated path.
+- Demonstrates runtime decision and commit-permission handling on the original path.
 - Shows explicit authority handling, replay denial, malformed-input denial, and contradiction collapse.
+- Provides a separate measured in-memory fixture with same-resource first/final observations around one bounded write path.
 - Routes readers to deeper repositories in the execution-boundary chain.
 - Provides a small proof surface that can be inspected in one sitting.
 
@@ -41,8 +42,11 @@ Useful inspection questions:
 1. Can the demo be run locally?
 2. Are decisions produced before execution?
 3. Are invalid, ambiguous, malformed, replayed, or contradictory inputs denied on the demonstrated path?
-4. Does the commit gate require a valid decision record before state mutation?
-5. Are current hardening gaps stated rather than hidden?
+4. Does the commit gate require a valid decision record before returning commit permission?
+5. In the separate measured fixture, are observation and effect bound to the same exact resource and object reference?
+6. Does the authorised control really change that resource, and does the denial control really avoid the effect call?
+7. Are observation/effect failure states kept distinct from measured success?
+8. Are current hardening gaps stated rather than hidden?
 
 ## Related evidence
 
@@ -70,10 +74,7 @@ Its receipt records:
 The boundary accepts no caller-supplied post-state hash. An effect adapter return
 value is not treated as measurement evidence.
 
-A denial control must show no effect-adapter call and equal observed pre/post
-state. The authorised control must show one effect call and unequal observed
-pre/post state. Failure to observe either side is not reported as a successful
-measurement.
+The included denial control shows no effect call and equal first/final reads of the same bound resource. The authorised control shows one write and unequal first/final reads of that resource. Failure to observe either side is not reported as measured success. A write-then-raise case is recorded as `effect_completed=False` while retaining any observed state change, so effect completion and state movement are not conflated.
 
 This is not a claim of production atomicity, independent third-party
 observation, universal path elimination, deployment or certification.

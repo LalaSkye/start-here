@@ -102,11 +102,13 @@ On the original decision/commit path:
 On the separate measured-mutation fixture:
 
 - the pre-state hash is read from a concrete in-memory resource
-- the gate independently re-reads that state at the commit boundary
-- a denied attempt does not call the effect adapter and the observed state remains unchanged
-- an authorised control calls the write adapter and produces a different observed post-state hash
-- the measurement boundary accepts no caller-supplied post-state hash
-- an effect adapter's return value is not treated as post-state evidence
+- the gate performs a second read from the same bound in-memory resource at the commit boundary
+- the included denial control does not call the effect path and its two reads of that same resource are equal
+- the authorised control writes that same resource and a later read produces a different post-state hash
+- the measurement boundary accepts no caller-supplied post-state hash, observer or effect implementation
+- the effect return channel is discarded; only a later bound-resource read can populate post-state evidence
+- pre- and post-observation failure paths are explicit and cannot emit a MEASURED success code
+- a write-then-raise specimen reports effect failure and the observed state change separately
 
 ## Current hardening gap
 
@@ -114,9 +116,9 @@ This repository demonstrates per-record canonical hashing, not cross-decision ha
 
 ## Canonical invariant
 
-> **No valid decision record -> no state mutation on the demonstrated path.**
+> **No valid decision record -> no commit permission on the demonstrated commit-gate path.**
 
-That invariant belongs to this demo. Do not read it as the claim of `commit-gate-core`.
+The separate measured fixture then checks one concrete in-memory resource. In its included denial control, no effect call occurs and the two bound-resource observations are equal. Do not transfer either claim outside its demonstrated object.
 
 ## Tests
 
@@ -139,19 +141,13 @@ python examples/measured_mutation.py
 python -m pytest tests/test_core/test_measured_mutation.py -v
 ```
 
-The fixture separates three objects:
+The fixture binds one exact `InMemoryMeasuredResource` into the measurement boundary. Observation and effect are not separately injectable. Both address the same resource instance and the same `object_ref`, and observations use the fixed `canonical-json-sha256:v1` rule.
 
-1. the existing commit gate, which decides whether the effect may proceed;
-2. a write-only effect adapter, which changes one concrete in-memory resource;
-3. a read-only observer, which measures that resource before and after.
+The existing commit gate decides whether the effect may proceed and performs a second live-state read through an adapter over that same resource. The effect then writes that same resource. A final read of that resource supplies the post-state measurement.
 
-The measurement boundary does **not** accept a `state_after_hash` argument.
-Its post-state value comes from the observer after the effect attempt.
+The measurement boundary does **not** accept a `state_after_hash`, observer, effect adapter or hash rule from its caller. The legacy commit gate still receives a private sentinel for its older result shape, but that sentinel is never copied into the measurement receipt.
 
-The tests include an authorised state-changing control, a refusal with no
-effect call, pre-state drift between observations, rejection of a
-caller-supplied post-state hash, an effect that returns a fictional hash which
-is ignored, and an effect-failure case.
+The tests include an authorised state-changing control; an unchanged denial control; same-resource constructor binding; pre-state drift between the first and gate reads; pre- and post-observation failure; rejection of a caller-supplied post-state hash; an effect return equal to the real post hash whose return channel is nevertheless discarded; failure before write; partial write followed by an exception; and explicit sentinel exclusion from the receipt.
 
 **Claim limit:** this is one instrumented in-memory resource and one governed
 write path. It is not production atomicity, independent third-party

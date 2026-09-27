@@ -12,7 +12,7 @@ This page does not introduce a new architecture claim. Its former route is retai
 
 ## Executive claim
 
-On the demonstrated path, an action cannot reach state mutation without a valid decision record.
+On the original demonstrated commit-gate path, commit permission is not returned without a valid decision record. A separate measured in-memory fixture demonstrates one concrete authorised write and one no-effect denial control.
 
 The control question is:
 
@@ -42,7 +42,7 @@ Demonstrates a narrow execution-control condition with ALLOW, DENY, and ESCALATE
 
 [commit-gate-core](https://github.com/LalaSkye/commit-gate-core)
 
-Demonstrates that the selected action path does not mutate state without a valid, scoped, unexpired, unreplayed `DecisionRecord`.
+Demonstrates an authorisation kernel over a valid, scoped, unexpired, unreplayed `DecisionRecord`; read its own current claim boundary for whether the selected version authorises only or also applies an effect.
 
 ### Research surface map
 
@@ -54,7 +54,8 @@ Provides the wider index, provenance route, terminology, and related public arte
 
 ## Evidence an inspector should expect
 
-- a decision before state mutation
+- a decision before commit permission is returned
+- a separately identified effect/measurement object when a state-mutation claim is made
 - fail-closed behaviour when authority is absent or invalid
 - refusal or hold output
 - an inspectable receipt where the audit sink accepts the event
