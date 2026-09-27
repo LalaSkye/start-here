@@ -59,6 +59,8 @@ The repository currently demonstrates per-record canonical hashing, not cross-de
 
 The measured-mutation fixture binds one exact `InMemoryMeasuredResource` into the boundary. Observation and effect are not separately injectable: both address that same instance and `object_ref`, and the hash rule is fixed. The resource lock closes interleaving only through this fixture's own in-memory read/write methods during one attempt.
 
+Same-process mutation, monkeypatching or replacement of the bound resource or its methods is outside this fixture’s claim; this object does not provide tamper-resistant observation.
+
 It does not establish production atomicity, independent third-party observation, durable execution custody, or elimination of every possible effect-capable path outside that fixture.
 
 Do not claim cross-decision receipt-chain custody until the implementation and tests prove it.

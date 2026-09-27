@@ -69,7 +69,7 @@ Expected answer:
 
 The separate measured-mutation fixture answers:
 
-**When that bounded fixture is denied, does the concrete state stay unchanged; and when its authorised control runs, is the resulting state change observed from the resource rather than supplied by the caller?**
+**In the included denial control, does that exact resource stay unchanged with no effect call; and when the authorised control runs, is the resulting state change observed from that same resource rather than supplied by the caller?**
 
 Expected answer:
 
@@ -153,6 +153,8 @@ The tests include an authorised state-changing control; an unchanged denial cont
 write path. It is not production atomicity, independent third-party
 observation, path-universal enforcement, deployment, certification or
 compliance.
+
+Same-process mutation, monkeypatching or replacement of the bound resource or its methods is outside this fixture’s claim; this object does not provide tamper-resistant observation.
 
 ## Where next
 
