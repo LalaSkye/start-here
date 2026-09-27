@@ -49,14 +49,40 @@ Useful inspection questions:
 - README: `README.md`
 - Demo runner: `run_demo.py`
 - Core gate: `core/commit_gate.py`
+- Measured mutation boundary: `core/measured_mutation.py`
+- Measured fixture runner: `examples/measured_mutation.py`
+- Measured fixture tests: `tests/test_core/test_measured_mutation.py`
 - Tests: `tests/`
 - Deeper route map: `links.md`
+
+## Measured fixture receipt
+
+The measured-mutation fixture is a separate bounded object inside this repository.
+
+Its receipt records:
+
+- whether the existing gate permitted the attempt
+- whether the effect adapter was attempted and completed
+- the state hash observed from the concrete in-memory resource before the attempt
+- the state hash observed from that resource after the attempt
+- whether the observations establish a state change
+
+The boundary accepts no caller-supplied post-state hash. An effect adapter return
+value is not treated as measurement evidence.
+
+A denial control must show no effect-adapter call and equal observed pre/post
+state. The authorised control must show one effect call and unequal observed
+pre/post state. Failure to observe either side is not reported as a successful
+measurement.
+
+This is not a claim of production atomicity, independent third-party
+observation, universal path elimination, deployment or certification.
 
 ## Claim boundary
 
 Allowed claim:
 
-> This repository is a minimal runnable entry surface for inspecting path-local execution-boundary behaviour before state mutation.
+> This repository is a minimal runnable inspection surface containing a bounded decision/commit demo and a separate measured in-memory mutation fixture.
 
 Not allowed:
 
